@@ -1,0 +1,2 @@
+-- After creating users in Supabase Auth, activate profiles for local testing:
+-- update public.profiles set status = 'active', role = 'operator' where id = '<user-uuid>';

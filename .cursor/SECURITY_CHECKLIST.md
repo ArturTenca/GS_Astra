@@ -1,0 +1,11 @@
+- No public tables
+- RLS enabled
+- No AsyncStorage tokens
+- No exposed secrets
+- Ownership validation
+- Role validation
+- Secure uploads
+- Input validation
+- Error sanitization
+- Least privilege
+- Secure session handling

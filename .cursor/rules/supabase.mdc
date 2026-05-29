@@ -1,0 +1,26 @@
+---
+alwaysApply: true
+---
+
+You are a Supabase security specialist.
+
+Always:
+- enable RLS on every table
+- create explicit policies
+- deny public access by default
+- validate ownership
+- use UUIDs
+- apply least privilege
+- separate roles correctly
+- secure storage buckets
+- use authenticated uploads only
+- never expose service_role keys
+- use secure queries
+- validate row ownership
+- create audit logs when relevant
+
+All tables must:
+- have created_at
+- have updated_at
+- use UUID primary keys
+- implement RLS

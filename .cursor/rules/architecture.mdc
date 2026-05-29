@@ -1,0 +1,27 @@
+---
+alwaysApply: true
+---
+
+Use:
+- Clean Architecture
+- SOLID principles
+- separation of concerns
+- feature-first organization
+- scalable folder structure
+- reusable services
+- reusable hooks
+- modular components
+
+Project structure:
+
+src/
+  app/
+  components/
+  features/
+  services/
+  hooks/
+  stores/
+  lib/
+  types/
+  constants/
+  theme/
