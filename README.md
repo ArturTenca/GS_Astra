@@ -46,9 +46,12 @@ Futuristic mobile platform for space mission support, extraterrestrial colony op
 
 4. Apply database migrations (Supabase CLI or SQL editor):
 
-   Run both files in order:
+   Run all migrations in order:
    - `supabase/migrations/20260528000000_profiles.sql`
    - `supabase/migrations/20260529100000_activate_profile_on_confirm.sql`
+   - `supabase/migrations/20260530100000_core_domain.sql`
+
+   Then run `supabase/seed.sql` for demo missions/colonies.
 
    Or: `supabase db push`
 

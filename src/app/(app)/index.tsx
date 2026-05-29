@@ -1,34 +1,86 @@
-import { Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button } from '@/components/ui/Button';
-import { APP_NAME } from '@/constants';
-import { useAuth } from '@/features/auth/hooks/useAuth';
-import { useLogout } from '@/features/auth/hooks/useLogout';
+import { router, type Href } from 'expo-router';
+import { ScrollView, Text, View } from 'react-native';
+import { AppScreenLayout } from '@/components/layout/AppScreenLayout';
+import { StatCard } from '@/components/ui/Card';
+import {
+  EmptyState,
+  ListItem,
+  LoadingState,
+  ScreenHeader,
+} from '@/components/ui/ScreenPrimitives';
+import { useDashboard } from '@/features/dashboard/hooks/useDashboard';
+import { getUserFacingMessage } from '@/lib/errors';
+import {
+  formatRelativeDate,
+  incidentStatusVariant,
+} from '@/lib/formatters/status';
 
-export default function ProtectedPlaceholderScreen() {
-  const { role, userId } = useAuth();
-  const logout = useLogout();
+export default function DashboardScreen() {
+  const { data, isLoading, isError, error, refetch, isRefetching } = useDashboard();
 
   return (
-    <SafeAreaView className="flex-1 bg-astra-bg px-6">
-      <View className="flex-1 justify-center">
-        <Text className="text-xs font-semibold uppercase tracking-[3px] text-astra-accent">
-          {APP_NAME}
-        </Text>
-        <Text className="mt-2 text-2xl font-bold text-astra-text">Authenticated</Text>
-        <Text className="mt-4 text-astra-muted">
-          Session active. Role: {role ?? 'unknown'}
-        </Text>
-        <Text className="mt-1 text-xs text-astra-muted">Operator ID: {userId}</Text>
-        <View className="mt-8">
-          <Button
-            title="Sign Out"
-            onPress={() => logout.mutate()}
-            loading={logout.isPending}
-            variant="ghost"
+    <AppScreenLayout>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <ScreenHeader
+          title="Mission Control"
+          subtitle="Real-time overview of active operations"
+        />
+
+        {isLoading ? <LoadingState message="Syncing mission data..." /> : null}
+
+        {isError ? (
+          <EmptyState
+            title="Unable to load dashboard"
+            message={getUserFacingMessage(error)}
           />
-        </View>
-      </View>
-    </SafeAreaView>
+        ) : null}
+
+        {data ? (
+          <>
+            <View className="mb-6 flex-row flex-wrap gap-3">
+              <StatCard label="Active Missions" value={data.activeMissions} />
+              <StatCard label="Open Incidents" value={data.openIncidents} accent="text-astra-warning" />
+              <StatCard label="Colonies" value={data.coloniesMonitored} accent="text-astra-primary" />
+            </View>
+
+            <Text className="mb-3 text-sm font-semibold uppercase tracking-wider text-astra-muted">
+              Recent Incidents
+            </Text>
+
+            {data.recentIncidents.length === 0 ? (
+              <EmptyState
+                title="No incidents reported"
+                message="Run supabase/seed.sql after migrations to load demo data."
+              />
+            ) : (
+              <View className="gap-3">
+                {data.recentIncidents.map((incident) => (
+                  <ListItem
+                    key={incident.id}
+                    title={incident.title}
+                    subtitle={incident.description.slice(0, 80)}
+                    meta={formatRelativeDate(incident.createdAt)}
+                    badge={incident.status}
+                    badgeVariant={incidentStatusVariant(incident.status)}
+                    onPress={() => router.push(`/(app)/incidents/${incident.id}` as Href)}
+                  />
+                ))}
+              </View>
+            )}
+
+            {isRefetching ? (
+              <Text className="mt-4 text-center text-xs text-astra-muted">Refreshing...</Text>
+            ) : (
+              <Text
+                className="mt-4 text-center text-xs text-astra-primary"
+                onPress={() => refetch()}
+              >
+                Tap to refresh
+              </Text>
+            )}
+          </>
+        ) : null}
+      </ScrollView>
+    </AppScreenLayout>
   );
 }
