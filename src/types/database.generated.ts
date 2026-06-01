@@ -137,10 +137,37 @@ export type Database = {
       };
       mission_members: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: [] };
       colony_members: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: [] };
+      audit_events: {
+        Row: {
+          id: string;
+          actor_id: string | null;
+          action: Database['public']['Enums']['audit_action'];
+          resource_type: string | null;
+          resource_id: string | null;
+          metadata: Json;
+          platform: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          actor_id: string;
+          action: Database['public']['Enums']['audit_action'];
+          resource_type?: string | null;
+          resource_id?: string | null;
+          metadata?: Json;
+          platform?: string | null;
+        };
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
       activate_own_profile_if_confirmed: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
+      can_read_audit_events: {
         Args: Record<string, never>;
         Returns: boolean;
       };
@@ -159,6 +186,16 @@ export type Database = {
       incident_severity: 'low' | 'medium' | 'high' | 'critical';
       incident_status: 'open' | 'investigating' | 'resolved' | 'closed';
       membership_role: 'viewer' | 'operator' | 'lead';
+      audit_action:
+        | 'auth.login'
+        | 'auth.logout'
+        | 'auth.mfa_enrolled'
+        | 'auth.mfa_verified'
+        | 'auth.mfa_removed'
+        | 'incident.created'
+        | 'incident.status_updated'
+        | 'incident.attachment_uploaded'
+        | 'security.access_denied';
     };
     CompositeTypes: Record<string, never>;
   };

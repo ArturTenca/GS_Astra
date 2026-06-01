@@ -9,14 +9,7 @@
 | **2a — Domain read** | Dashboard, missions, colonies, tabs, RLS, seed | Done |
 | **2b — Incidents E2E** | Create, list, filters, detail, timeline, status, confirmation | Done |
 | **3 — Mobile & polish** | GPS, camera/gallery attachments, draft (SecureStore), pull-to-refresh, skeletons | Done |
-
-## Next — Phase 4 (Security hardening, academic)
-
-- [ ] `audit_events` table + client logging
-- [ ] `docs/THREAT_MODEL.md`
-- [ ] Incident response playbook
-- [ ] Pentest checklist + test accounts per role
-- [ ] Optional MFA (Supabase TOTP)
+| **4 — Security (academic)** | Audit log, threat model, IR playbook, pentest checklist, optional MFA | Done |
 
 ## Phase 5 — Enhancements
 
@@ -36,7 +29,8 @@
 4. `20260530110000_incident_history_note.sql`
 5. `20260530120000_incidents_select_reporter.sql`
 6. `20260531100000_incident_attachments_storage.sql`
-7. `supabase/seed.sql` (after first user exists)
+7. `20260601100000_audit_events.sql`
+8. `supabase/seed.sql` (after first user exists)
 
 ## MVP checklist (Global Solution)
 

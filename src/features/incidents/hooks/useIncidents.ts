@@ -13,6 +13,7 @@ import {
   type UpdateIncidentStatusFormValues,
 } from '@/features/incidents/schemas/incident.schema';
 import { getUserFacingMessage } from '@/lib/errors';
+import { recordAuditEvent } from '@/services/audit/audit.service';
 import type { LocationCoords } from '@/hooks/useLocationCapture';
 import { attachmentRepository, incidentRepository } from '@/services/repositories';
 import type { PendingAttachment } from '@/types/attachment.types';
@@ -97,7 +98,21 @@ export function useCreateIncident() {
 
       return incident;
     },
-    onSuccess: async (incident) => {
+    onSuccess: async (incident, variables) => {
+      await recordAuditEvent(userId, {
+        action: 'incident.created',
+        resourceType: 'incident',
+        resourceId: incident.id,
+        metadata: { severity: incident.severity },
+      });
+      if (variables.attachments.length > 0) {
+        await recordAuditEvent(userId, {
+          action: 'incident.attachment_uploaded',
+          resourceType: 'incident',
+          resourceId: incident.id,
+          metadata: { count: variables.attachments.length },
+        });
+      }
       await clearDraft();
       void queryClient.invalidateQueries({ queryKey: queryKeys.incidents() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard() });
@@ -123,6 +138,7 @@ export function useCreateIncident() {
 
 export function useUpdateIncidentStatus(incidentId: string) {
   const queryClient = useQueryClient();
+  const { userId } = useAuth();
 
   const form = useForm<UpdateIncidentStatusFormValues>({
     resolver: zodResolver(updateIncidentStatusSchema),
@@ -137,7 +153,13 @@ export function useUpdateIncidentStatus(incidentId: string) {
         status: values.status,
         note: values.note,
       }),
-    onSuccess: () => {
+    onSuccess: async (_data, variables) => {
+      await recordAuditEvent(userId, {
+        action: 'incident.status_updated',
+        resourceType: 'incident',
+        resourceId: incidentId,
+        metadata: { status: variables.status },
+      });
       void queryClient.invalidateQueries({ queryKey: queryKeys.incident(incidentId) });
       void queryClient.invalidateQueries({ queryKey: ['incident-history', incidentId] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.incidents() });

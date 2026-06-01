@@ -8,7 +8,7 @@ type AuthFormFieldProps<T extends FieldValues> = {
   placeholder: string;
   secureTextEntry?: boolean;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
-  keyboardType?: 'default' | 'email-address';
+  keyboardType?: 'default' | 'email-address' | 'number-pad';
   maxLength?: number;
 };
 
