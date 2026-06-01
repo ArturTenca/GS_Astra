@@ -22,6 +22,8 @@ export type CreateIncidentInput = {
   title: string;
   description: string;
   severity: IncidentSeverity;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 export type UpdateIncidentStatusInput = {

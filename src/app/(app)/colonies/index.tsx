@@ -1,10 +1,10 @@
 import { router, type Href } from 'expo-router';
-import { FlatList } from 'react-native';
+import { FlatList, RefreshControl } from 'react-native';
 import { AppScreenLayout } from '@/components/layout/AppScreenLayout';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 import {
   EmptyState,
   ListItem,
-  LoadingState,
   ScreenHeader,
 } from '@/components/ui/ScreenPrimitives';
 import { useColonies } from '@/features/dashboard/hooks/useDashboard';
@@ -12,13 +12,13 @@ import { getUserFacingMessage } from '@/lib/errors';
 import { colonyStatusVariant } from '@/lib/formatters/status';
 
 export default function ColoniesListScreen() {
-  const { data, isLoading, isError, error } = useColonies();
+  const { data, isLoading, isError, error, refetch, isRefetching } = useColonies();
 
   return (
     <AppScreenLayout>
       <ScreenHeader title="Colonies" subtitle="Habitats and surface installations" />
 
-      {isLoading ? <LoadingState /> : null}
+      {isLoading ? <ListSkeleton count={4} /> : null}
       {isError ? (
         <EmptyState title="Failed to load colonies" message={getUserFacingMessage(error)} />
       ) : null}
@@ -35,6 +35,9 @@ export default function ColoniesListScreen() {
           data={data}
           keyExtractor={(item) => item.id}
           contentContainerClassName="gap-3 pb-8"
+          refreshControl={
+            <RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} tintColor="#3b82f6" />
+          }
           renderItem={({ item }) => (
             <ListItem
               title={item.name}

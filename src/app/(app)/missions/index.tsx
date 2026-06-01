@@ -1,10 +1,10 @@
 import { router, type Href } from 'expo-router';
-import { FlatList } from 'react-native';
+import { FlatList, RefreshControl } from 'react-native';
 import { AppScreenLayout } from '@/components/layout/AppScreenLayout';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 import {
   EmptyState,
   ListItem,
-  LoadingState,
   ScreenHeader,
 } from '@/components/ui/ScreenPrimitives';
 import { useMissions } from '@/features/dashboard/hooks/useDashboard';
@@ -12,13 +12,13 @@ import { getUserFacingMessage } from '@/lib/errors';
 import { missionStatusVariant } from '@/lib/formatters/status';
 
 export default function MissionsListScreen() {
-  const { data, isLoading, isError, error } = useMissions();
+  const { data, isLoading, isError, error, refetch, isRefetching } = useMissions();
 
   return (
     <AppScreenLayout>
       <ScreenHeader title="Missions" subtitle="Operations you are assigned to" />
 
-      {isLoading ? <LoadingState /> : null}
+      {isLoading ? <ListSkeleton count={4} /> : null}
       {isError ? (
         <EmptyState title="Failed to load missions" message={getUserFacingMessage(error)} />
       ) : null}
@@ -35,6 +35,9 @@ export default function MissionsListScreen() {
           data={data}
           keyExtractor={(item) => item.id}
           contentContainerClassName="gap-3 pb-8"
+          refreshControl={
+            <RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} tintColor="#3b82f6" />
+          }
           renderItem={({ item }) => (
             <ListItem
               title={item.name}

@@ -92,6 +92,8 @@ export class IncidentRepository extends BaseRepository {
         description: input.description,
         severity: input.severity,
         status: 'open',
+        latitude: input.latitude ?? null,
+        longitude: input.longitude ?? null,
       })
       .select(INCIDENT_SELECT)
       .single();

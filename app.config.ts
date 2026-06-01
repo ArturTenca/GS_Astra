@@ -19,6 +19,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'com.astra.mobile',
+    infoPlist: {
+      NSCameraUsageDescription:
+        'ASTRA needs camera access to attach photo evidence to incident reports.',
+      NSPhotoLibraryUsageDescription:
+        'ASTRA needs gallery access to attach photo evidence to incident reports.',
+      NSLocationWhenInUseUsageDescription:
+        'ASTRA uses your location to geotag incident reports for mission operations.',
+    },
   },
   android: {
     adaptiveIcon: {
@@ -26,13 +34,39 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       backgroundColor: '#0a0e17',
     },
     package: 'com.astra.mobile',
+    permissions: [
+      'ACCESS_COARSE_LOCATION',
+      'ACCESS_FINE_LOCATION',
+      'CAMERA',
+      'READ_MEDIA_IMAGES',
+    ],
   },
   web: {
     bundler: 'metro',
     output: 'single',
     favicon: './assets/favicon.png',
   },
-  plugins: ['expo-router', 'expo-secure-store', 'expo-font'],
+  plugins: [
+    'expo-router',
+    'expo-secure-store',
+    'expo-font',
+    [
+      'expo-location',
+      {
+        locationWhenInUsePermission:
+          'ASTRA uses your location to geotag incident reports for mission operations.',
+      },
+    ],
+    [
+      'expo-image-picker',
+      {
+        photosPermission:
+          'ASTRA needs gallery access to attach photo evidence to incident reports.',
+        cameraPermission:
+          'ASTRA needs camera access to attach photo evidence to incident reports.',
+      },
+    ],
+  ],
   experiments: {
     typedRoutes: true,
   },

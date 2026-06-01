@@ -112,6 +112,29 @@ export type Database = {
         };
         Relationships: [];
       };
+      incident_attachments: {
+        Row: {
+          id: string;
+          incident_id: string;
+          uploaded_by: string;
+          storage_path: string;
+          file_name: string;
+          mime_type: string;
+          file_size_bytes: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          incident_id: string;
+          uploaded_by: string;
+          storage_path: string;
+          file_name: string;
+          mime_type: string;
+          file_size_bytes: number;
+        };
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
       mission_members: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: [] };
       colony_members: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: [] };
     };

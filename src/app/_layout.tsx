@@ -1,4 +1,5 @@
 import 'react-native-gesture-handler';
+import '@/lib/web-theme-bootstrap';
 import '../../global.css';
 import { Stack } from 'expo-router';
 import { AppProviders } from '@/components/providers/AppProviders';

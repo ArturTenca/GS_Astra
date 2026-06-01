@@ -1,25 +1,34 @@
 import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { Controller } from 'react-hook-form';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { AppScreenLayout } from '@/components/layout/AppScreenLayout';
 import { Button } from '@/components/ui/Button';
 import { FormField } from '@/components/ui/FormField';
 import { OptionPicker } from '@/components/ui/OptionPicker';
-import { EmptyState, LoadingState, ScreenHeader } from '@/components/ui/ScreenPrimitives';
+import { ListSkeleton } from '@/components/ui/Skeleton';
+import { EmptyState, ScreenHeader } from '@/components/ui/ScreenPrimitives';
 import { useMissions, useColonies } from '@/features/dashboard/hooks/useDashboard';
+import {
+  AttachmentSection,
+  LocationCaptureSection,
+} from '@/features/incidents/components/IncidentMobileSections';
+import { useAttachmentPicker } from '@/features/incidents/hooks/useAttachmentPicker';
 import { useCreateIncident } from '@/features/incidents/hooks/useIncidents';
 import {
   INCIDENT_DESCRIPTION_MAX,
   INCIDENT_TITLE_MAX,
 } from '@/features/incidents/schemas/incident.schema';
+import { useLocationCapture } from '@/hooks/useLocationCapture';
 import { INCIDENT_SEVERITIES } from '@/types/domain';
 
 export default function CreateIncidentScreen() {
-  const { form, onSubmit, isPending, errorMessage } = useCreateIncident();
+  const { form, submit, isPending, errorMessage } = useCreateIncident();
   const missionsQuery = useMissions();
   const missionId = form.watch('missionId');
   const coloniesQuery = useColonies(missionId || undefined);
+  const location = useLocationCapture();
+  const attachments = useAttachmentPicker();
 
   useEffect(() => {
     if (missionsQuery.data?.[0] && !form.getValues('missionId')) {
@@ -34,7 +43,7 @@ export default function CreateIncidentScreen() {
   if (missionsQuery.isLoading) {
     return (
       <AppScreenLayout>
-        <LoadingState />
+        <ListSkeleton count={2} />
       </AppScreenLayout>
     );
   }
@@ -67,12 +76,25 @@ export default function CreateIncidentScreen() {
 
   return (
     <AppScreenLayout>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={missionsQuery.isRefetching}
+            onRefresh={() => missionsQuery.refetch()}
+            tintColor="#3b82f6"
+          />
+        }
+      >
         <Pressable onPress={() => router.back()} className="mb-4">
           <Text className="text-sm text-astra-primary">← Back</Text>
         </Pressable>
 
         <ScreenHeader title="Report Incident" subtitle="Document an operational event" />
+
+        <Text className="mb-4 text-xs text-astra-muted">
+          Draft auto-saves locally while you type (SecureStore).
+        </Text>
 
         {errorMessage ? (
           <View className="mb-4 rounded-lg border border-astra-danger/50 bg-astra-danger/10 p-3">
@@ -131,7 +153,32 @@ export default function CreateIncidentScreen() {
           autoCapitalize="sentences"
         />
 
-        <Button title="Submit Report" onPress={onSubmit} loading={isPending} />
+        <LocationCaptureSection
+          coords={location.coords}
+          status={location.status}
+          message={
+            Platform.OS === 'web' && location.status === 'idle'
+              ? 'GPS works best on a physical device. On web, location may be approximate or unavailable.'
+              : location.message
+          }
+          isCapturing={location.isCapturing}
+          onCapture={location.captureLocation}
+          onClear={location.clearLocation}
+        />
+
+        <AttachmentSection
+          attachments={attachments.attachments}
+          error={attachments.error}
+          onTakePhoto={attachments.takePhoto}
+          onPickGallery={attachments.pickFromGallery}
+          onRemove={attachments.removeAttachment}
+        />
+
+        <Button
+          title="Submit Report"
+          onPress={() => submit(location.coords, attachments.attachments)}
+          loading={isPending}
+        />
       </ScrollView>
     </AppScreenLayout>
   );

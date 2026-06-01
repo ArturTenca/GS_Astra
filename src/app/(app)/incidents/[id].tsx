@@ -1,10 +1,12 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { AppScreenLayout } from '@/components/layout/AppScreenLayout';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { FormField } from '@/components/ui/FormField';
 import { OptionPicker } from '@/components/ui/OptionPicker';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 import {
   EmptyState,
   LoadingState,
@@ -12,6 +14,7 @@ import {
 } from '@/components/ui/ScreenPrimitives';
 import {
   useIncident,
+  useIncidentAttachments,
   useIncidentHistory,
   useUpdateIncidentStatus,
 } from '@/features/incidents/hooks/useIncidents';
@@ -24,17 +27,20 @@ import {
 } from '@/lib/formatters/status';
 import { INCIDENT_STATUSES } from '@/types/domain';
 import { Controller } from 'react-hook-form';
+import { Image, Linking } from 'react-native';
 
 export default function IncidentDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const [isEditing, setIsEditing] = useState(false);
   const incidentQuery = useIncident(id ?? '');
   const historyQuery = useIncidentHistory(id ?? '');
+  const attachmentsQuery = useIncidentAttachments(id ?? '');
   const updateStatus = useUpdateIncidentStatus(id ?? '');
 
   if (incidentQuery.isLoading) {
     return (
       <AppScreenLayout>
-        <LoadingState />
+        <ListSkeleton count={3} />
       </AppScreenLayout>
     );
   }
@@ -56,6 +62,13 @@ export default function IncidentDetailScreen() {
   const incident = incidentQuery.data;
   const statusOptions = INCIDENT_STATUSES.map((s) => ({ value: s, label: s }));
   const isClosed = incident.status === 'closed';
+  const hasLocation = incident.latitude != null && incident.longitude != null;
+
+  const openMap = () => {
+    if (!hasLocation) return;
+    const url = `https://www.openstreetmap.org/?mlat=${incident.latitude}&mlon=${incident.longitude}#map=16/${incident.latitude}/${incident.longitude}`;
+    void Linking.openURL(url);
+  };
 
   return (
     <AppScreenLayout>
@@ -78,6 +91,59 @@ export default function IncidentDetailScreen() {
           <Text className="text-sm text-astra-muted">Description</Text>
           <Text className="mt-2 text-astra-text">{incident.description}</Text>
         </Card>
+
+        <Card className="mb-4">
+          <View className="flex-row items-center justify-between">
+            <Text className="text-sm text-astra-muted">GPS Coordinates</Text>
+            {hasLocation ? (
+              <Pressable onPress={openMap} className="px-2 py-1">
+                <Text className="text-sm font-semibold text-astra-primary">Open map →</Text>
+              </Pressable>
+            ) : null}
+          </View>
+          {hasLocation ? (
+            <Text className="mt-2 text-astra-text">
+              {incident.latitude!.toFixed(6)}, {incident.longitude!.toFixed(6)}
+            </Text>
+          ) : (
+            <Text className="mt-2 text-sm text-astra-muted">No location captured.</Text>
+          )}
+        </Card>
+
+        <Text className="mb-3 text-sm font-semibold uppercase tracking-wider text-astra-muted">
+          Photo evidence
+        </Text>
+
+        {attachmentsQuery.isLoading ? <LoadingState message="Loading photos..." /> : null}
+
+        {attachmentsQuery.data && attachmentsQuery.data.length === 0 ? (
+          <Text className="mb-4 text-sm text-astra-muted">No photos attached.</Text>
+        ) : null}
+
+        {attachmentsQuery.data && attachmentsQuery.data.length > 0 ? (
+          <View className="mb-4 flex-row flex-wrap gap-2">
+            {attachmentsQuery.data.map((attachment) => (
+              <View
+                key={attachment.id}
+                className="h-24 w-24 overflow-hidden rounded-lg border border-astra-border bg-astra-panel"
+              >
+                {attachment.signedUrl ? (
+                  <Image
+                    source={{ uri: attachment.signedUrl }}
+                    className="h-24 w-24"
+                    accessibilityLabel={attachment.fileName}
+                  />
+                ) : (
+                  <View className="flex-1 items-center justify-center p-2">
+                    <Text className="text-center text-[10px] text-astra-muted">
+                      {attachment.fileName}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            ))}
+          </View>
+        ) : null}
 
         <Text className="mb-3 text-sm font-semibold uppercase tracking-wider text-astra-muted">
           Status timeline
@@ -103,7 +169,20 @@ export default function IncidentDetailScreen() {
           </Card>
         ))}
 
-        {!isClosed ? (
+        <View className="mt-4 flex-row gap-2">
+          <View className="flex-1">
+            <Button
+              title={isEditing ? 'Stop editing' : 'Edit'}
+              onPress={() => setIsEditing((v) => !v)}
+              variant="ghost"
+            />
+          </View>
+          <View className="flex-1">
+            <Button title="Back" onPress={() => router.back()} variant="ghost" />
+          </View>
+        </View>
+
+        {isEditing && !isClosed ? (
           <View className="mt-6">
             <Text className="mb-3 text-sm font-semibold uppercase tracking-wider text-astra-muted">
               Update status
@@ -139,11 +218,13 @@ export default function IncidentDetailScreen() {
               loading={updateStatus.isPending}
             />
           </View>
-        ) : (
+        ) : null}
+
+        {isEditing && isClosed ? (
           <Card className="mt-6">
             <Text className="text-sm text-astra-muted">This incident is closed.</Text>
           </Card>
-        )}
+        ) : null}
       </ScrollView>
     </AppScreenLayout>
   );

@@ -1,11 +1,11 @@
 import { router, type Href } from 'expo-router';
-import { ScrollView, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, View } from 'react-native';
 import { AppScreenLayout } from '@/components/layout/AppScreenLayout';
 import { StatCard } from '@/components/ui/Card';
+import { ListSkeleton, StatSkeleton } from '@/components/ui/Skeleton';
 import {
   EmptyState,
   ListItem,
-  LoadingState,
   ScreenHeader,
 } from '@/components/ui/ScreenPrimitives';
 import { useDashboard } from '@/features/dashboard/hooks/useDashboard';
@@ -20,13 +20,25 @@ export default function DashboardScreen() {
 
   return (
     <AppScreenLayout>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} tintColor="#3b82f6" />
+        }
+      >
         <ScreenHeader
           title="Mission Control"
           subtitle="Real-time overview of active operations"
         />
 
-        {isLoading ? <LoadingState message="Syncing mission data..." /> : null}
+        {isLoading ? (
+          <>
+            <StatSkeleton />
+            <View className="mt-6">
+              <ListSkeleton count={3} />
+            </View>
+          </>
+        ) : null}
 
         {isError ? (
           <EmptyState
@@ -42,10 +54,6 @@ export default function DashboardScreen() {
               <StatCard label="Open Incidents" value={data.openIncidents} accent="text-astra-warning" />
               <StatCard label="Colonies" value={data.coloniesMonitored} accent="text-astra-primary" />
             </View>
-
-            <Text className="mb-3 text-sm font-semibold uppercase tracking-wider text-astra-muted">
-              Recent Incidents
-            </Text>
 
             {data.recentIncidents.length === 0 ? (
               <EmptyState
@@ -66,17 +74,6 @@ export default function DashboardScreen() {
                   />
                 ))}
               </View>
-            )}
-
-            {isRefetching ? (
-              <Text className="mt-4 text-center text-xs text-astra-muted">Refreshing...</Text>
-            ) : (
-              <Text
-                className="mt-4 text-center text-xs text-astra-primary"
-                onPress={() => refetch()}
-              >
-                Tap to refresh
-              </Text>
             )}
           </>
         ) : null}

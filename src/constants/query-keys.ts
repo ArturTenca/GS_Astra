@@ -8,5 +8,6 @@ export const queryKeys = {
   incidents: (missionId?: string) =>
     missionId ? (['incidents', missionId] as const) : (['incidents'] as const),
   incident: (id: string) => ['incident', id] as const,
+  incidentAttachments: (incidentId: string) => ['incident-attachments', incidentId] as const,
   dashboard: () => ['dashboard'] as const,
 } as const;

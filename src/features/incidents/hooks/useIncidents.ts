@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { queryKeys } from '@/constants/query-keys';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useIncidentDraft } from '@/features/incidents/hooks/useIncidentDraft';
 import {
   createIncidentSchema,
   type CreateIncidentFormValues,
@@ -12,13 +13,16 @@ import {
   type UpdateIncidentStatusFormValues,
 } from '@/features/incidents/schemas/incident.schema';
 import { getUserFacingMessage } from '@/lib/errors';
-import { incidentRepository } from '@/services/repositories';
+import type { LocationCoords } from '@/hooks/useLocationCapture';
+import { attachmentRepository, incidentRepository } from '@/services/repositories';
+import type { PendingAttachment } from '@/types/attachment.types';
 import type { IncidentFilters } from '@/types/domain';
 
 export function useIncidents(filters: IncidentFilters) {
   return useQuery({
     queryKey: [...queryKeys.incidents(), filters],
     queryFn: () => incidentRepository.list(filters),
+    refetchOnMount: 'always',
   });
 }
 
@@ -38,6 +42,20 @@ export function useIncidentHistory(incidentId: string) {
   });
 }
 
+export function useIncidentAttachments(incidentId: string) {
+  return useQuery({
+    queryKey: queryKeys.incidentAttachments(incidentId),
+    queryFn: () => attachmentRepository.listByIncident(incidentId),
+    enabled: Boolean(incidentId),
+  });
+}
+
+type CreateIncidentPayload = {
+  values: CreateIncidentFormValues;
+  location: LocationCoords | null;
+  attachments: PendingAttachment[];
+};
+
 export function useCreateIncident() {
   const queryClient = useQueryClient();
   const { userId } = useAuth();
@@ -54,21 +72,33 @@ export function useCreateIncident() {
     mode: 'onBlur',
   });
 
+  const { clearDraft } = useIncidentDraft(form);
+
   const mutation = useMutation({
-    mutationFn: async (values: CreateIncidentFormValues) => {
+    mutationFn: async ({ values, location, attachments }: CreateIncidentPayload) => {
       if (!userId) {
         throw new Error('Not authenticated');
       }
-      return incidentRepository.create({
+
+      const incident = await incidentRepository.create({
         missionId: values.missionId,
         colonyId: values.colonyId || null,
         reporterId: userId,
         title: values.title,
         description: values.description,
         severity: values.severity,
+        latitude: location?.latitude ?? null,
+        longitude: location?.longitude ?? null,
       });
+
+      if (attachments.length > 0) {
+        await attachmentRepository.uploadMany(incident.id, userId, attachments);
+      }
+
+      return incident;
     },
-    onSuccess: (incident) => {
+    onSuccess: async (incident) => {
+      await clearDraft();
       void queryClient.invalidateQueries({ queryKey: queryKeys.incidents() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard() });
       router.replace(
@@ -77,11 +107,15 @@ export function useCreateIncident() {
     },
   });
 
-  const onSubmit = form.handleSubmit((values) => mutation.mutate(values));
+  const submit = (location: LocationCoords | null, attachments: PendingAttachment[]) => {
+    void form.handleSubmit((values) => {
+      mutation.mutate({ values, location, attachments });
+    })();
+  };
 
   return {
     form,
-    onSubmit,
+    submit,
     isPending: mutation.isPending,
     errorMessage: mutation.error ? getUserFacingMessage(mutation.error) : null,
   };
