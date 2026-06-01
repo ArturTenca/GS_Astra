@@ -6,6 +6,7 @@ import type {
   Incident,
   IncidentFilters,
   IncidentStatusHistory,
+  UpdateIncidentInput,
   UpdateIncidentStatusInput,
 } from '@/types/domain';
 import { BaseRepository } from './base.repository';
@@ -103,6 +104,62 @@ export class IncidentRepository extends BaseRepository {
     }
 
     return mapIncident(data);
+  }
+
+  async update(input: UpdateIncidentInput): Promise<Incident> {
+    const { data, error } = await supabase
+      .from('incidents')
+      .update({
+        ...(input.title != null ? { title: input.title } : {}),
+        ...(input.description != null ? { description: input.description } : {}),
+        ...(input.severity != null ? { severity: input.severity } : {}),
+        ...(input.colonyId !== undefined ? { colony_id: input.colonyId || null } : {}),
+        ...(input.status != null ? { status: input.status } : {}),
+        ...(input.latitude !== undefined ? { latitude: input.latitude } : {}),
+        ...(input.longitude !== undefined ? { longitude: input.longitude } : {}),
+      })
+      .eq('id', input.incidentId)
+      .select(INCIDENT_SELECT)
+      .single();
+
+    if (error) {
+      this.handleError(error);
+    }
+
+    if (input.note?.trim() && input.status != null) {
+      const { data: latestHistory, error: historyError } = await supabase
+        .from('incident_status_history')
+        .select('id')
+        .eq('incident_id', input.incidentId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (historyError) {
+        this.handleError(historyError);
+      }
+
+      if (latestHistory) {
+        const { error: noteError } = await supabase
+          .from('incident_status_history')
+          .update({ note: input.note.trim() })
+          .eq('id', latestHistory.id);
+
+        if (noteError) {
+          this.handleError(noteError);
+        }
+      }
+    }
+
+    return mapIncident(data);
+  }
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase.from('incidents').delete().eq('id', id);
+
+    if (error) {
+      this.handleError(error);
+    }
   }
 
   async updateStatus(input: UpdateIncidentStatusInput): Promise<Incident> {

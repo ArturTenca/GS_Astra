@@ -1,9 +1,25 @@
+import type { AlertSeverity } from '@/types/alert.types';
 import type {
   ColonyStatus,
   IncidentSeverity,
   IncidentStatus,
   MissionStatus,
 } from '@/types/domain';
+
+export function alertSeverityVariant(
+  severity: AlertSeverity,
+): 'default' | 'success' | 'warning' | 'danger' | 'info' {
+  switch (severity) {
+    case 'critical':
+      return 'danger';
+    case 'warning':
+      return 'warning';
+    case 'info':
+      return 'info';
+    default:
+      return 'default';
+  }
+}
 
 export function missionStatusVariant(
   status: MissionStatus,

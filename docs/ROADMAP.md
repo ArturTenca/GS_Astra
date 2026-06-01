@@ -10,12 +10,11 @@
 | **2b — Incidents E2E** | Create, list, filters, detail, timeline, status, confirmation | Done |
 | **3 — Mobile & polish** | GPS, camera/gallery attachments, draft (SecureStore), pull-to-refresh, skeletons | Done |
 | **4 — Security (academic)** | Audit log, threat model, IR playbook, pentest checklist, optional MFA | Done |
+| **5 — Enhancements (core)** | Alerts tab, realtime, acknowledgment, telemetry charts on dashboard | Done |
 
-## Phase 5 — Enhancements
+## Phase 5 — Remaining (optional)
 
-- [ ] Push notifications + alerts tab
-- [ ] Realtime telemetry charts
-- [ ] Alerts acknowledgment
+- [ ] Native push notifications (see `docs/PUSH_NOTIFICATIONS_SETUP.md`)
 - [ ] Edge Functions (signed uploads)
 - [ ] Multi-org admin tooling
 
@@ -30,7 +29,9 @@
 5. `20260530120000_incidents_select_reporter.sql`
 6. `20260531100000_incident_attachments_storage.sql`
 7. `20260601100000_audit_events.sql`
-8. `supabase/seed.sql` (after first user exists)
+8. `20260602100000_domain_crud_policies.sql`
+9. `20260603100000_alerts_telemetry.sql`
+10. `supabase/seed.sql` (after first user exists; re-run to load alerts/telemetry)
 
 ## MVP checklist (Global Solution)
 

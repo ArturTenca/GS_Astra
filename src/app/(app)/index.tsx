@@ -1,14 +1,18 @@
-import { router, type Href } from 'expo-router';
-import { RefreshControl, ScrollView, View } from 'react-native';
+import { useState } from 'react';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { AppScreenLayout } from '@/components/layout/AppScreenLayout';
 import { StatCard } from '@/components/ui/Card';
 import { ListSkeleton, StatSkeleton } from '@/components/ui/Skeleton';
+import { TelemetryChart } from '@/components/ui/TelemetryChart';
 import {
   EmptyState,
   ListItem,
   ScreenHeader,
 } from '@/components/ui/ScreenPrimitives';
-import { useDashboard } from '@/features/dashboard/hooks/useDashboard';
+import { useUnacknowledgedAlertCount } from '@/features/alerts/hooks/useAlerts';
+import { useColonies, useDashboard } from '@/features/dashboard/hooks/useDashboard';
+import { IncidentQuickViewModal } from '@/features/incidents/components/IncidentQuickViewModal';
+import { useColonyTelemetry } from '@/features/telemetry/hooks/useTelemetry';
 import { getUserFacingMessage } from '@/lib/errors';
 import {
   formatRelativeDate,
@@ -17,9 +21,20 @@ import {
 
 export default function DashboardScreen() {
   const { data, isLoading, isError, error, refetch, isRefetching } = useDashboard();
+  const { data: alertCount } = useUnacknowledgedAlertCount();
+  const coloniesQuery = useColonies();
+  const primaryColony = coloniesQuery.data?.[0] ?? null;
+  const telemetryQuery = useColonyTelemetry(primaryColony?.id ?? null);
+  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
 
   return (
     <AppScreenLayout>
+      <IncidentQuickViewModal
+        incidentId={selectedIncidentId}
+        visible={selectedIncidentId != null}
+        onClose={() => setSelectedIncidentId(null)}
+        onDeleted={() => setSelectedIncidentId(null)}
+      />
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -52,8 +67,27 @@ export default function DashboardScreen() {
             <View className="mb-6 flex-row flex-wrap gap-3">
               <StatCard label="Active Missions" value={data.activeMissions} />
               <StatCard label="Open Incidents" value={data.openIncidents} accent="text-astra-warning" />
+              <StatCard
+                label="Pending Alerts"
+                value={alertCount ?? 0}
+                accent="text-astra-danger"
+              />
               <StatCard label="Colonies" value={data.coloniesMonitored} accent="text-astra-primary" />
             </View>
+
+            <View className="mb-6">
+              {telemetryQuery.isLoading ? <ListSkeleton count={2} /> : null}
+              {telemetryQuery.data ? (
+                <TelemetryChart
+                  series={telemetryQuery.data}
+                  colonyName={primaryColony?.name}
+                />
+              ) : null}
+            </View>
+
+            <Text className="mb-3 text-sm font-semibold uppercase tracking-wider text-astra-muted">
+              Recent incidents
+            </Text>
 
             {data.recentIncidents.length === 0 ? (
               <EmptyState
@@ -70,7 +104,7 @@ export default function DashboardScreen() {
                     meta={formatRelativeDate(incident.createdAt)}
                     badge={incident.status}
                     badgeVariant={incidentStatusVariant(incident.status)}
-                    onPress={() => router.push(`/(app)/incidents/${incident.id}` as Href)}
+                    onPress={() => setSelectedIncidentId(incident.id)}
                   />
                 ))}
               </View>

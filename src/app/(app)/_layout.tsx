@@ -1,11 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 import { AuthLoadingScreen } from '@/components/feedback/AuthLoadingScreen';
+import { useAlertsRealtime, useUnacknowledgedAlertCount } from '@/features/alerts/hooks/useAlerts';
 import { useAuthGuard } from '@/lib/auth/auth-guards';
-import { Redirect } from 'expo-router';
 
 export default function AppLayout() {
   const { isHydrated, isAuthenticated } = useAuthGuard();
+  const { data: unacknowledgedCount } = useUnacknowledgedAlertCount();
+
+  useAlertsRealtime();
 
   if (!isHydrated) {
     return <AuthLoadingScreen />;
@@ -14,6 +17,13 @@ export default function AppLayout() {
   if (!isAuthenticated) {
     return <Redirect href="/(auth)/login" />;
   }
+
+  const alertBadge =
+    unacknowledgedCount != null && unacknowledgedCount > 0
+      ? unacknowledgedCount > 9
+        ? '9+'
+        : unacknowledgedCount
+      : undefined;
 
   return (
     <Tabs
@@ -33,6 +43,16 @@ export default function AppLayout() {
           title: 'Dashboard',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="planet-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="alerts"
+        options={{
+          title: 'Alerts',
+          tabBarBadge: alertBadge,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="notifications-outline" size={size} color={color} />
           ),
         }}
       />

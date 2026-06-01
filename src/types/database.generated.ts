@@ -45,8 +45,22 @@ export type Database = {
           created_at: string;
           updated_at: string;
         };
-        Insert: Record<string, unknown>;
-        Update: Record<string, unknown>;
+        Insert: {
+          name: string;
+          code: string;
+          description?: string | null;
+          status?: Database['public']['Enums']['mission_status'];
+          start_at?: string | null;
+          end_at?: string | null;
+        };
+        Update: {
+          name?: string;
+          code?: string;
+          description?: string | null;
+          status?: Database['public']['Enums']['mission_status'];
+          start_at?: string | null;
+          end_at?: string | null;
+        };
         Relationships: [];
       };
       colonies: {
@@ -61,8 +75,21 @@ export type Database = {
           created_at: string;
           updated_at: string;
         };
-        Insert: Record<string, unknown>;
-        Update: Record<string, unknown>;
+        Insert: {
+          mission_id: string;
+          name: string;
+          code: string;
+          location_label?: string | null;
+          environment_summary?: string | null;
+          status?: Database['public']['Enums']['colony_status'];
+        };
+        Update: {
+          name?: string;
+          code?: string;
+          location_label?: string | null;
+          environment_summary?: string | null;
+          status?: Database['public']['Enums']['colony_status'];
+        };
         Relationships: [];
       };
       incidents: {
@@ -92,7 +119,14 @@ export type Database = {
           longitude?: number | null;
         };
         Update: {
+          mission_id?: string;
+          colony_id?: string | null;
+          title?: string;
+          description?: string;
+          severity?: Database['public']['Enums']['incident_severity'];
           status?: Database['public']['Enums']['incident_status'];
+          latitude?: number | null;
+          longitude?: number | null;
         };
         Relationships: [];
       };
@@ -137,6 +171,55 @@ export type Database = {
       };
       mission_members: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: [] };
       colony_members: { Row: Record<string, unknown>; Insert: Record<string, unknown>; Update: Record<string, unknown>; Relationships: [] };
+      alerts: {
+        Row: {
+          id: string;
+          mission_id: string;
+          colony_id: string | null;
+          incident_id: string | null;
+          title: string;
+          message: string;
+          severity: Database['public']['Enums']['alert_severity'];
+          acknowledged_at: string | null;
+          acknowledged_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          mission_id: string;
+          colony_id?: string | null;
+          incident_id?: string | null;
+          title: string;
+          message: string;
+          severity?: Database['public']['Enums']['alert_severity'];
+        };
+        Update: {
+          acknowledged_at?: string | null;
+          acknowledged_by?: string | null;
+        };
+        Relationships: [];
+      };
+      colony_telemetry: {
+        Row: {
+          id: string;
+          colony_id: string;
+          metric_key: string;
+          value: number;
+          unit: string;
+          recorded_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          colony_id: string;
+          metric_key: string;
+          value: number;
+          unit: string;
+          recorded_at?: string;
+        };
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
       audit_events: {
         Row: {
           id: string;
@@ -186,6 +269,7 @@ export type Database = {
       incident_severity: 'low' | 'medium' | 'high' | 'critical';
       incident_status: 'open' | 'investigating' | 'resolved' | 'closed';
       membership_role: 'viewer' | 'operator' | 'lead';
+      alert_severity: 'info' | 'warning' | 'critical';
       audit_action:
         | 'auth.login'
         | 'auth.logout'

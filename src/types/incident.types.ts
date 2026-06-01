@@ -31,3 +31,15 @@ export type UpdateIncidentStatusInput = {
   status: IncidentStatus;
   note?: string;
 };
+
+export type UpdateIncidentInput = {
+  incidentId: string;
+  title?: string;
+  description?: string;
+  severity?: IncidentSeverity;
+  colonyId?: string | null;
+  status?: IncidentStatus;
+  latitude?: number | null;
+  longitude?: number | null;
+  note?: string;
+};

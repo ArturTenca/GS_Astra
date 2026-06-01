@@ -34,6 +34,7 @@ export default function IncidentsListScreen() {
         incidentId={selectedIncidentId}
         visible={hasModal}
         onClose={() => setSelectedIncidentId(null)}
+        onDeleted={() => setSelectedIncidentId(null)}
       />
 
       <ScrollView

@@ -94,6 +94,47 @@ begin
       and title = 'Pressure fluctuation in Module B'
   );
 
+  insert into public.alerts (mission_id, colony_id, title, message, severity)
+  select
+    v_mission_artemis,
+    v_colony_lda,
+    'O₂ variance watch',
+    'Oxygen levels dipped 0.4% below nominal for 12 minutes. Auto-stabilized.',
+    'warning'
+  where not exists (
+    select 1 from public.alerts where title = 'O₂ variance watch'
+  );
+
+  insert into public.colony_telemetry (colony_id, metric_key, value, unit, recorded_at)
+  select
+    v_colony_lda,
+    m.metric_key,
+    m.value,
+    m.unit,
+    now() - (m.offset_min || ' minutes')::interval
+  from (
+    values
+      ('o2_percent', 20.8, '%', 0),
+      ('o2_percent', 20.6, '%', 15),
+      ('o2_percent', 20.9, '%', 30),
+      ('o2_percent', 21.0, '%', 45),
+      ('o2_percent', 20.7, '%', 60),
+      ('o2_percent', 21.1, '%', 75),
+      ('temp_c', -23.2, '°C', 0),
+      ('temp_c', -23.5, '°C', 15),
+      ('temp_c', -23.1, '°C', 30),
+      ('temp_c', -22.9, '°C', 45),
+      ('temp_c', -23.0, '°C', 60),
+      ('temp_c', -23.4, '°C', 75),
+      ('pressure_kpa', 101.2, 'kPa', 0),
+      ('pressure_kpa', 101.1, 'kPa', 20),
+      ('pressure_kpa', 101.3, 'kPa', 40),
+      ('pressure_kpa', 101.0, 'kPa', 60)
+  ) as m(metric_key, value, unit, offset_min)
+  where not exists (
+    select 1 from public.colony_telemetry where colony_id = v_colony_lda limit 1
+  );
+
   raise notice 'Seed complete for user %', v_user_id;
 end;
 $$;

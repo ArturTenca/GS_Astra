@@ -38,3 +38,25 @@ export const updateIncidentStatusSchema = z.object({
 });
 
 export type UpdateIncidentStatusFormValues = z.infer<typeof updateIncidentStatusSchema>;
+
+export const updateIncidentSchema = z.object({
+  missionId: z.string().uuid('Select a mission'),
+  colonyId: z.union([z.string().uuid(), z.literal('')]),
+  title: z
+    .string()
+    .trim()
+    .min(3, 'Title must be at least 3 characters')
+    .max(INCIDENT_TITLE_MAX)
+    .transform(sanitizeDisplayName),
+  description: z
+    .string()
+    .trim()
+    .min(10, 'Description must be at least 10 characters')
+    .max(INCIDENT_DESCRIPTION_MAX)
+    .transform((v) => v.replace(/[\u0000-\u001F\u007F<>]/g, '').trim()),
+  severity: z.enum(INCIDENT_SEVERITIES),
+  status: z.enum(INCIDENT_STATUSES),
+  note: z.string().max(INCIDENT_NOTE_MAX).optional(),
+});
+
+export type UpdateIncidentFormValues = z.infer<typeof updateIncidentSchema>;

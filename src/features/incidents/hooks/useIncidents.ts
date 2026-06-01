@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router, type Href } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { queryKeys } from '@/constants/query-keys';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -9,6 +9,8 @@ import { useIncidentDraft } from '@/features/incidents/hooks/useIncidentDraft';
 import {
   createIncidentSchema,
   type CreateIncidentFormValues,
+  updateIncidentSchema,
+  type UpdateIncidentFormValues,
   updateIncidentStatusSchema,
   type UpdateIncidentStatusFormValues,
 } from '@/features/incidents/schemas/incident.schema';
@@ -136,7 +138,17 @@ export function useCreateIncident() {
   };
 }
 
-export function useUpdateIncidentStatus(incidentId: string) {
+type UpdateIncidentStatusOptions = {
+  /** When false, refreshes queries only (modal flow). Default: true. */
+  navigateOnSuccess?: boolean;
+  onSuccess?: () => void;
+};
+
+export function useUpdateIncidentStatus(
+  incidentId: string,
+  options: UpdateIncidentStatusOptions = {},
+) {
+  const { navigateOnSuccess = true, onSuccess: onSuccessCallback } = options;
   const queryClient = useQueryClient();
   const { userId } = useAuth();
 
@@ -164,9 +176,12 @@ export function useUpdateIncidentStatus(incidentId: string) {
       void queryClient.invalidateQueries({ queryKey: ['incident-history', incidentId] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.incidents() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard() });
-      router.replace(
-        `/(app)/incidents/success?incidentId=${incidentId}&action=updated` as Href,
-      );
+      onSuccessCallback?.();
+      if (navigateOnSuccess) {
+        router.replace(
+          `/(app)/incidents/success?incidentId=${incidentId}&action=updated` as Href,
+        );
+      }
     },
   });
 
@@ -178,6 +193,99 @@ export function useUpdateIncidentStatus(incidentId: string) {
     isPending: mutation.isPending,
     errorMessage: mutation.error ? getUserFacingMessage(mutation.error) : null,
   };
+}
+
+type MutationCallbacks = {
+  onSuccess?: () => void;
+};
+
+export function useUpdateIncident(incidentId: string, options: MutationCallbacks = {}) {
+  const queryClient = useQueryClient();
+  const { userId } = useAuth();
+  const incidentQuery = useIncident(incidentId);
+
+  const form = useForm<UpdateIncidentFormValues>({
+    resolver: zodResolver(updateIncidentSchema),
+    defaultValues: {
+      missionId: '',
+      colonyId: '',
+      title: '',
+      description: '',
+      severity: 'medium',
+      status: 'open',
+      note: '',
+    },
+    mode: 'onBlur',
+  });
+
+  useEffect(() => {
+    const incident = incidentQuery.data;
+    if (!incident) return;
+    form.reset({
+      missionId: incident.missionId,
+      colonyId: incident.colonyId ?? '',
+      title: incident.title,
+      description: incident.description,
+      severity: incident.severity,
+      status: incident.status,
+      note: '',
+    });
+  }, [incidentQuery.data, form]);
+
+  const mutation = useMutation({
+    mutationFn: (values: UpdateIncidentFormValues) =>
+      incidentRepository.update({
+        incidentId,
+        title: values.title,
+        description: values.description,
+        severity: values.severity,
+        colonyId: values.colonyId || null,
+        status: values.status,
+        note: values.note,
+      }),
+    onSuccess: async (_data, variables) => {
+      await recordAuditEvent(userId, {
+        action: 'incident.status_updated',
+        resourceType: 'incident',
+        resourceId: incidentId,
+        metadata: { status: variables.status },
+      });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.incident(incidentId) });
+      void queryClient.invalidateQueries({ queryKey: ['incident-history', incidentId] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.incidents() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard() });
+      options.onSuccess?.();
+    },
+  });
+
+  const onSubmit = form.handleSubmit((values) => mutation.mutate(values));
+
+  return {
+    form,
+    onSubmit,
+    isPending: mutation.isPending,
+    errorMessage: mutation.error ? getUserFacingMessage(mutation.error) : null,
+    incidentQuery,
+  };
+}
+
+export function useDeleteIncident(options: MutationCallbacks = {}) {
+  const queryClient = useQueryClient();
+  const { userId } = useAuth();
+
+  return useMutation({
+    mutationFn: async (incidentId: string) => {
+      await attachmentRepository.deleteByIncident(incidentId);
+      await incidentRepository.delete(incidentId);
+    },
+    onSuccess: (_data, incidentId) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.incidents() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard() });
+      void queryClient.removeQueries({ queryKey: queryKeys.incident(incidentId) });
+      void userId;
+      options.onSuccess?.();
+    },
+  });
 }
 
 export function useIncidentFilters() {

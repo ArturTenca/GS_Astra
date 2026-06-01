@@ -115,6 +115,34 @@ export class AttachmentRepository extends BaseRepository {
     return mapAttachment(data);
   }
 
+  async deleteByIncident(incidentId: string): Promise<void> {
+    const { data: rows, error: listError } = await supabase
+      .from('incident_attachments')
+      .select('storage_path')
+      .eq('incident_id', incidentId);
+
+    if (listError) {
+      this.handleError(listError);
+    }
+
+    const paths = (rows ?? []).map((row) => row.storage_path);
+    if (paths.length > 0) {
+      const { error: storageError } = await supabase.storage.from(BUCKET).remove(paths);
+      if (storageError) {
+        this.handleError(storageError);
+      }
+    }
+
+    const { error } = await supabase
+      .from('incident_attachments')
+      .delete()
+      .eq('incident_id', incidentId);
+
+    if (error) {
+      this.handleError(error);
+    }
+  }
+
   async uploadMany(
     incidentId: string,
     userId: string,

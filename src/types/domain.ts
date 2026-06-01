@@ -83,5 +83,9 @@ export type {
   CreateIncidentInput,
   IncidentFilters,
   IncidentStatusHistory,
+  UpdateIncidentInput,
   UpdateIncidentStatusInput,
 } from './incident.types';
+
+export type { CreateMissionInput, UpdateMissionInput } from './mission.types';
+export type { CreateColonyInput, UpdateColonyInput } from './colony.types';
