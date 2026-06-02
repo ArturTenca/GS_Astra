@@ -6,7 +6,7 @@ Do **not** open public GitHub issues for security vulnerabilities. Contact the p
 
 ## Secrets
 
-- Never commit `.env`, `.env.*` (except `.env.example` with placeholders).
+- Never commit `.env`, `.env.example`, or any env files with real keys.
 - Never commit `supabase/migrations/*.sql` or `supabase/seed.sql` to a **public** repository.
 - Never put the Supabase **service_role** key in the mobile app or in Git.
 

@@ -16,4 +16,4 @@ After all migrations, run `supabase/seed.sql` locally (also gitignored) only in 
 
 ## Environment
 
-Copy `.env.example` → `.env` (root). Never commit `.env`.
+Create `.env` in the project root per [docs/ENV_SETUP.md](../../docs/ENV_SETUP.md). Never commit `.env`.

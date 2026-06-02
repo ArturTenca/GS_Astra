@@ -2,7 +2,7 @@
 
 ## Repository (before git push)
 
-- [ ] No `.env` or `.env.*` tracked (only `.env.example`)
+- [ ] No `.env` or `.env.*` tracked (including `.env.example`)
 - [ ] No `supabase/migrations/*.sql` or `supabase/seed.sql` tracked
 - [ ] `git ls-files | grep '\.sql'` returns empty
 - [ ] No `service_role` in `src/`

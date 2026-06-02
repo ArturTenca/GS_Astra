@@ -10,13 +10,13 @@ const envSchema = z.object({
   EXPO_PUBLIC_SUPABASE_URL: z
     .string({
       required_error:
-        'EXPO_PUBLIC_SUPABASE_URL is missing. Create a .env file from .env.example and restart Expo.',
+        'EXPO_PUBLIC_SUPABASE_URL is missing. Add it to a local .env file (see docs/ENV_SETUP.md) and restart Expo.',
     })
     .url('EXPO_PUBLIC_SUPABASE_URL must be a valid URL'),
   EXPO_PUBLIC_SUPABASE_ANON_KEY: z
     .string({
       required_error:
-        'EXPO_PUBLIC_SUPABASE_ANON_KEY is missing. Create a .env file from .env.example and restart Expo.',
+        'EXPO_PUBLIC_SUPABASE_ANON_KEY is missing. Add it to a local .env file (see docs/ENV_SETUP.md) and restart Expo.',
     })
     .min(1, 'EXPO_PUBLIC_SUPABASE_ANON_KEY is required')
     .refine(

@@ -7,15 +7,15 @@ Auditoria do cliente React Native/Expo e práticas de repositório. **A seguran�
 | Item | Status |
 |------|--------|
 | Código TypeScript da app | OK — sem `service_role`, sem senhas |
-| `.env.example` | OK — apenas placeholders |
 | `assets/`, `docs/` acadêmicos | OK |
+| `docs/ENV_SETUP.md` | OK — só nomes de variáveis, sem chaves |
 | `package-lock.json` | OK — auditar com `npm audit` periodicamente |
 
 ## 2. O que NÃO pode ir para o GitHub
 
 | Item | Motivo | Ação neste repo |
 |------|--------|-----------------|
-| `.env`, `.env.local`, etc. | Contém URL + anon key do projeto | `.gitignore` + só `.env.example` |
+| `.env`, `.env.local`, `.env.example`, etc. | Contém URL + anon key do projeto | `.gitignore` — ver `docs/ENV_SETUP.md` localmente |
 | `supabase/migrations/*.sql` | Revela RLS, funções `SECURITY DEFINER`, schema | **Gitignore** — aplicar localmente |
 | `supabase/seed.sql` | Dados de demo + lógica de membership | **Gitignore** |
 | `service_role` key | Bypass total de RLS | Nunca no cliente; validação em `env.ts` |
@@ -67,7 +67,7 @@ Auditoria do cliente React Native/Expo e práticas de repositório. **A seguran�
 
 ```bash
 # Nenhum .env tracked
-git ls-files | grep -E '\.env'   # deve mostrar só .env.example
+git ls-files | grep -E '\.env'   # deve estar vazio
 
 # Nenhum SQL tracked
 git ls-files | grep '\.sql'      # deve estar vazio

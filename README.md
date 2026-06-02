@@ -37,10 +37,9 @@ Futuristic mobile platform for space mission support, extraterrestrial colony op
 
 ```bash
 npm install
-cp .env.example .env
 ```
 
-Set `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` in `.env`.
+Create a local `.env` with `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` — see **[docs/ENV_SETUP.md](docs/ENV_SETUP.md)**.
 
 ### 2. Supabase database
 
@@ -88,6 +87,7 @@ See **[docs/VERIFICATION.md](docs/VERIFICATION.md)** for a full test checklist.
 | [docs/PUSH_NOTIFICATIONS_SETUP.md](docs/PUSH_NOTIFICATIONS_SETUP.md) | Optional native push |
 | [docs/CYBER_SECURITY_AUDIT.md](docs/CYBER_SECURITY_AUDIT.md) | Security audit + Git hygiene |
 | [docs/MIGRATIONS_LOCAL.md](docs/MIGRATIONS_LOCAL.md) | Migration order (SQL stays local) |
+| [docs/ENV_SETUP.md](docs/ENV_SETUP.md) | Local `.env` variables (not in Git) |
 | [SECURITY.md](SECURITY.md) | GitHub security policy |
 
 ## Project structure
