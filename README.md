@@ -20,7 +20,7 @@ Futuristic mobile platform for space mission support, extraterrestrial colony op
 | **Auth** | Register, login, logout, SecureStore, profile activation |
 | **Missions / Colonies** | List, popup detail, create, edit, delete |
 | **Incidents** | Report (GPS + photos), filters, popup, edit, delete, status timeline |
-| **Alerts** | Realtime list, acknowledge, tab badge |
+| **Alerts** | CRUD, calendar deadline, realtime, acknowledge |
 | **Dashboard** | Stats + colony telemetry charts |
 | **Security** | Audit log, optional MFA (TOTP), academic docs |
 
@@ -44,19 +44,9 @@ Set `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` in `.env`.
 
 ### 2. Supabase database
 
-Run **all** migrations in order (SQL Editor or `supabase db push`):
+SQL migrations are **not committed to Git** (security). Keep `supabase/migrations/*.sql` on your machine and apply in order — see **[docs/MIGRATIONS_LOCAL.md](docs/MIGRATIONS_LOCAL.md)** (SQL Editor or private `supabase db push`).
 
-1. `20260528000000_profiles.sql`
-2. `20260529100000_activate_profile_on_confirm.sql`
-3. `20260530100000_core_domain.sql`
-4. `20260530110000_incident_history_note.sql`
-5. `20260530120000_incidents_select_reporter.sql`
-6. `20260531100000_incident_attachments_storage.sql`
-7. `20260601100000_audit_events.sql`
-8. `20260602100000_domain_crud_policies.sql`
-9. `20260603100000_alerts_telemetry.sql`
-
-Then register one user and run `supabase/seed.sql`.
+Then register one user and run `supabase/seed.sql` locally (dev only, also gitignored).
 
 Enable **Realtime** for table `alerts` (Database → Replication).
 
@@ -65,6 +55,10 @@ Enable **Realtime** for table `alerts` (Database → Replication).
 ```bash
 npx expo start --clear
 ```
+
+### Web deploy (Vercel)
+
+See **[docs/DEPLOY_VERCEL.md](docs/DEPLOY_VERCEL.md)**. Requires `vercel.json`, build `npm run build:web`, output `dist`, and Supabase env vars on Vercel.
 
 Press **`w`** for web, or scan the QR code with Expo Go.
 
@@ -92,6 +86,9 @@ See **[docs/VERIFICATION.md](docs/VERIFICATION.md)** for a full test checklist.
 | [docs/INCIDENT_RESPONSE_PLAYBOOK.md](docs/INCIDENT_RESPONSE_PLAYBOOK.md) | IR playbook |
 | [docs/PENTEST_CHECKLIST.md](docs/PENTEST_CHECKLIST.md) | Manual security tests |
 | [docs/PUSH_NOTIFICATIONS_SETUP.md](docs/PUSH_NOTIFICATIONS_SETUP.md) | Optional native push |
+| [docs/CYBER_SECURITY_AUDIT.md](docs/CYBER_SECURITY_AUDIT.md) | Security audit + Git hygiene |
+| [docs/MIGRATIONS_LOCAL.md](docs/MIGRATIONS_LOCAL.md) | Migration order (SQL stays local) |
+| [SECURITY.md](SECURITY.md) | GitHub security policy |
 
 ## Project structure
 
@@ -104,17 +101,18 @@ src/
   lib/           # Supabase, errors, auth, permissions
   stores/        # Zustand (no tokens)
 supabase/
-  migrations/    # Ordered SQL migrations
-  seed.sql       # Demo data
+  migrations/    # SQL files local only (gitignored) — see docs/MIGRATIONS_LOCAL.md
+  seed.sql       # Dev seed (gitignored)
 docs/            # Roadmap + academic + verification
 ```
 
 ## Security notes
 
-- Auth tokens only in **Expo SecureStore** (never AsyncStorage).
-- RLS on all tables; `service_role` never in the client.
+- Auth tokens only in **Expo SecureStore** on device (never AsyncStorage).
+- RLS on all tables; **`service_role` never in the client** (enforced in `src/lib/env.ts`).
 - Roles from `profiles` table, not JWT user metadata.
-- Never commit `.env`.
+- **Never commit** `.env` or `supabase/migrations/*.sql` to public GitHub.
+- Full audit: **[docs/CYBER_SECURITY_AUDIT.md](docs/CYBER_SECURITY_AUDIT.md)**.
 
 ## Academic context
 

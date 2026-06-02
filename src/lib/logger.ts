@@ -2,7 +2,18 @@ type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 type LogContext = Record<string, string | number | boolean | undefined>;
 
-const SENSITIVE_KEYS = ['password', 'token', 'session', 'authorization', 'jwt'];
+const SENSITIVE_KEYS = [
+  'password',
+  'token',
+  'session',
+  'authorization',
+  'jwt',
+  'secret',
+  'apikey',
+  'api_key',
+  'anon_key',
+  'service_role',
+];
 
 function sanitizeContext(context?: LogContext): LogContext | undefined {
   if (!context) return undefined;

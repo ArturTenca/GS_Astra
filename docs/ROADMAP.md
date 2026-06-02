@@ -29,6 +29,8 @@ All migrations listed below are in `supabase/migrations/`. After applying them a
 | 8 | `20260602100000_domain_crud_policies.sql` | CRUD RLS |
 | 9 | `20260603100000_alerts_telemetry.sql` | Alerts + telemetry + realtime |
 | 10 | `20260604100000_alerts_deadline_crud.sql` | Alert deadline (`active_until`) + CRUD RLS |
+
+> Migrations are **gitignored** — apply from local `supabase/migrations/` per [MIGRATIONS_LOCAL.md](./MIGRATIONS_LOCAL.md).
 | — | `seed.sql` | Demo data (re-run after signup) |
 
 **Realtime:** enable replication for `public.alerts`.
