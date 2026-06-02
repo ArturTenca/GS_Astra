@@ -8,113 +8,113 @@ Futuristic mobile platform for space mission support, extraterrestrial colony op
 - TypeScript
 - Expo Router
 - NativeWind (Tailwind CSS)
-- Supabase (Auth, Postgres, RLS)
+- Supabase (Auth, Postgres, RLS, Realtime, Storage)
 - React Query
 - Zustand
 - Zod + React Hook Form
+
+## Features
+
+| Area | Capabilities |
+|------|----------------|
+| **Auth** | Register, login, logout, SecureStore, profile activation |
+| **Missions / Colonies** | List, popup detail, create, edit, delete |
+| **Incidents** | Report (GPS + photos), filters, popup, edit, delete, status timeline |
+| **Alerts** | Realtime list, acknowledge, tab badge |
+| **Dashboard** | Stats + colony telemetry charts |
+| **Security** | Audit log, optional MFA (TOTP), academic docs |
 
 ## Prerequisites
 
 - Node.js 20+
 - npm
 - Expo Go or a development build
-- Supabase project
+- Supabase project (migrations applied)
 
 ## Setup
 
-1. Install dependencies:
+### 1. Install and env
 
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+cp .env.example .env
+```
 
-2. Copy environment variables:
+Set `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` in `.env`.
 
-   ```bash
-   cp .env.example .env
-   ```
+### 2. Supabase database
 
-   Fill in `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` from your Supabase project settings.
+Run **all** migrations in order (SQL Editor or `supabase db push`):
 
-3. Apply database migration (Supabase CLI or SQL editor):
+1. `20260528000000_profiles.sql`
+2. `20260529100000_activate_profile_on_confirm.sql`
+3. `20260530100000_core_domain.sql`
+4. `20260530110000_incident_history_note.sql`
+5. `20260530120000_incidents_select_reporter.sql`
+6. `20260531100000_incident_attachments_storage.sql`
+7. `20260601100000_audit_events.sql`
+8. `20260602100000_domain_crud_policies.sql`
+9. `20260603100000_alerts_telemetry.sql`
 
-   ```bash
-   supabase db push
-   ```
+Then register one user and run `supabase/seed.sql`.
 
-   Or run `supabase/migrations/20260528000000_profiles.sql` in the Supabase SQL editor.
+Enable **Realtime** for table `alerts` (Database → Replication).
 
-4. Apply database migrations (Supabase CLI or SQL editor):
+### 3. Run the app
 
-   Run all migrations in order:
-   - `supabase/migrations/20260528000000_profiles.sql`
-   - `supabase/migrations/20260529100000_activate_profile_on_confirm.sql`
-   - `supabase/migrations/20260530100000_core_domain.sql`
+```bash
+npx expo start --clear
+```
 
-   Then run `supabase/seed.sql` for demo missions/colonies.
+Press **`w`** for web, or scan the QR code with Expo Go.
 
-   Or: `supabase db push`
+### 4. Verify
 
-5. Enable email auth in Supabase Dashboard. After confirming your email, login will auto-activate your profile.
-
-5. Start the app:
-
-   ```bash
-   npx expo start --clear
-   ```
-
-   Press **`w`** for web, or scan QR code with Expo Go.
-
-## Troubleshooting (web)
-
-If you see **500** or **MIME type application/json** errors in the browser:
-
-1. Ensure dependencies match Expo SDK 52:
-
-   ```bash
-   npx expo install expo-asset expo-font @expo/metro-runtime
-   npm install
-   ```
-
-2. Clear Metro cache: `npx expo start --clear`
-
-3. `nativewind` must stay on **4.1.23** (4.2.x requires Reanimated 4 / worklets).
-
-Common Metro errors fixed in this project:
-
-- `react-native-worklets/plugin` → pin `nativewind@4.1.23`
-- `@opentelemetry/api` → required by `@supabase/supabase-js` on web
-- `expo-font` → required by Expo Router web
+See **[docs/VERIFICATION.md](docs/VERIFICATION.md)** for a full test checklist.
 
 ## Scripts
 
-| Script            | Description                |
-| ----------------- | -------------------------- |
-| `npm start`       | Start Expo dev server      |
-| `npm run typecheck` | TypeScript check           |
-| `npm run lint`    | ESLint                     |
-| `npm run format`  | Prettier                   |
+| Script | Description |
+|--------|-------------|
+| `npm start` | Start Expo dev server |
+| `npm run typecheck` | TypeScript check |
+| `npm run lint` | ESLint |
+| `npm run format` | Prettier |
+| `npm run verify` | typecheck + lint |
+
+## Documentation
+
+| Doc | Purpose |
+|-----|---------|
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Implementation phases |
+| [docs/VERIFICATION.md](docs/VERIFICATION.md) | Post-setup test checklist |
+| [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) | Cybersecurity deliverable |
+| [docs/INCIDENT_RESPONSE_PLAYBOOK.md](docs/INCIDENT_RESPONSE_PLAYBOOK.md) | IR playbook |
+| [docs/PENTEST_CHECKLIST.md](docs/PENTEST_CHECKLIST.md) | Manual security tests |
+| [docs/PUSH_NOTIFICATIONS_SETUP.md](docs/PUSH_NOTIFICATIONS_SETUP.md) | Optional native push |
 
 ## Project structure
 
 ```
 src/
-  app/           # Expo Router routes
-  components/    # Shared UI + providers
-  features/      # Feature modules (auth, etc.)
-  services/      # Repositories
-  lib/           # Supabase, errors, auth, env
+  app/           # Expo Router (tabs: dashboard, alerts, missions, colonies, incidents, profile)
+  components/    # Shared UI
+  features/      # Feature modules
+  services/      # Repositories + audit
+  lib/           # Supabase, errors, auth, permissions
   stores/        # Zustand (no tokens)
-  theme/         # Design tokens
-supabase/        # Migrations
+supabase/
+  migrations/    # Ordered SQL migrations
+  seed.sql       # Demo data
+docs/            # Roadmap + academic + verification
 ```
 
 ## Security notes
 
-- Auth tokens are stored in **Expo SecureStore only** (never AsyncStorage).
-- User-facing auth errors are generic (no account enumeration).
-- Roles are loaded from `profiles` via RLS (not JWT user metadata).
-- Never commit `.env` or `service_role` keys.
+- Auth tokens only in **Expo SecureStore** (never AsyncStorage).
+- RLS on all tables; `service_role` never in the client.
+- Roles from `profiles` table, not JWT user metadata.
+- Never commit `.env`.
 
 ## Academic context
 

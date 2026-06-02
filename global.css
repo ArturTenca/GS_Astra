@@ -1,3 +1,27 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --astra-bg: 244 246 251;
+    --astra-surface: 255 255 255;
+    --astra-panel: 241 245 249;
+    --astra-border: 226 232 240;
+    --astra-primary: 37 99 235;
+    --astra-accent: 99 102 241;
+    --astra-muted: 100 116 139;
+    --astra-text: 15 23 42;
+  }
+
+  .dark {
+    --astra-bg: 6 10 18;
+    --astra-surface: 15 22 40;
+    --astra-panel: 21 31 51;
+    --astra-border: 36 48 71;
+    --astra-primary: 59 130 246;
+    --astra-accent: 34 211 238;
+    --astra-muted: 148 163 184;
+    --astra-text: 241 245 249;
+  }
+}

@@ -77,8 +77,6 @@ export function AlertQuickViewModal({ alertId, visible, onClose }: AlertQuickVie
               </Text>
             </Card>
           )}
-
-          <Button title="Close" onPress={onClose} variant="ghost" />
         </>
       ) : null}
     </QuickViewModalShell>

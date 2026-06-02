@@ -1,10 +1,12 @@
-import { useState } from 'react';
-import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { useOpenEntityFromParams } from '@/hooks/useOpenEntityFromParams';
+import { Pressable, RefreshControl, Text, View } from 'react-native';
 import { AppScreenLayout } from '@/components/layout/AppScreenLayout';
-import { ListSkeleton } from '@/components/ui/Skeleton';
+import { EntityGrid } from '@/components/ui/EntityGrid';
+import { GridSkeleton } from '@/components/ui/Skeleton';
 import {
   EmptyState,
-  ListItem,
+  GridCard,
   ScreenHeader,
 } from '@/components/ui/ScreenPrimitives';
 import { ColonyFormModal } from '@/features/colonies/components/ColonyFormModal';
@@ -19,6 +21,9 @@ export default function ColoniesListScreen() {
   const { data, isLoading, isError, error, refetch, isRefetching } = useColonies();
   const [selectedColonyId, setSelectedColonyId] = useState<string | null>(null);
   const [colonyFormId, setColonyFormId] = useState<string | 'create' | null>(null);
+
+  const openColony = useCallback((id: string) => setSelectedColonyId(id), []);
+  useOpenEntityFromParams(openColony);
 
   const showAdd = isAuthenticated;
 
@@ -55,7 +60,7 @@ export default function ColoniesListScreen() {
         ) : null}
       </View>
 
-      {isLoading ? <ListSkeleton count={4} /> : null}
+      {isLoading ? <GridSkeleton count={4} /> : null}
       {isError ? (
         <EmptyState title="Failed to load colonies" message={getUserFacingMessage(error)} />
       ) : null}
@@ -63,20 +68,20 @@ export default function ColoniesListScreen() {
       {data && data.length === 0 ? (
         <EmptyState
           title="No colonies visible"
-          message="Add a colony or join a mission to see habitats."
+          message="Tap + Add to register a habitat, or pull down to refresh."
         />
       ) : null}
 
       {data && data.length > 0 ? (
-        <FlatList
+        <View className="flex-1">
+        <EntityGrid
           data={data}
           keyExtractor={(item) => item.id}
-          contentContainerClassName="gap-3 pb-8"
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} tintColor="#3b82f6" />
           }
-          renderItem={({ item }) => (
-            <ListItem
+          renderItem={(item) => (
+            <GridCard
               title={item.name}
               subtitle={item.code}
               meta={item.locationLabel ?? item.environmentSummary ?? undefined}
@@ -86,6 +91,7 @@ export default function ColoniesListScreen() {
             />
           )}
         />
+        </View>
       ) : null}
     </AppScreenLayout>
   );

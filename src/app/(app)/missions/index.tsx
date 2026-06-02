@@ -1,10 +1,12 @@
-import { useState } from 'react';
-import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { useOpenEntityFromParams } from '@/hooks/useOpenEntityFromParams';
+import { Pressable, RefreshControl, Text, View } from 'react-native';
 import { AppScreenLayout } from '@/components/layout/AppScreenLayout';
-import { ListSkeleton } from '@/components/ui/Skeleton';
+import { EntityGrid } from '@/components/ui/EntityGrid';
+import { GridSkeleton } from '@/components/ui/Skeleton';
 import {
   EmptyState,
-  ListItem,
+  GridCard,
   ScreenHeader,
 } from '@/components/ui/ScreenPrimitives';
 import { ColonyQuickViewModal } from '@/features/colonies/components/ColonyQuickViewModal';
@@ -23,6 +25,9 @@ export default function MissionsListScreen() {
   const [selectedColonyId, setSelectedColonyId] = useState<string | null>(null);
   const [missionFormId, setMissionFormId] = useState<string | 'create' | null>(null);
   const [colonyFormId, setColonyFormId] = useState<string | 'create' | null>(null);
+
+  const openMission = useCallback((id: string) => setSelectedMissionId(id), []);
+  useOpenEntityFromParams(openMission);
 
   const showAdd = isAuthenticated;
 
@@ -79,7 +84,7 @@ export default function MissionsListScreen() {
         ) : null}
       </View>
 
-      {isLoading ? <ListSkeleton count={4} /> : null}
+      {isLoading ? <GridSkeleton count={4} /> : null}
       {isError ? (
         <EmptyState title="Failed to load missions" message={getUserFacingMessage(error)} />
       ) : null}
@@ -87,20 +92,20 @@ export default function MissionsListScreen() {
       {data && data.length === 0 ? (
         <EmptyState
           title="No missions assigned"
-          message="Create a mission or run supabase/seed.sql for demo data."
+          message="Tap + Add to create a mission, or pull down to refresh."
         />
       ) : null}
 
       {data && data.length > 0 ? (
-        <FlatList
+        <View className="flex-1">
+        <EntityGrid
           data={data}
           keyExtractor={(item) => item.id}
-          contentContainerClassName="gap-3 pb-8"
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} tintColor="#3b82f6" />
           }
-          renderItem={({ item }) => (
-            <ListItem
+          renderItem={(item) => (
+            <GridCard
               title={item.name}
               subtitle={item.code}
               meta={item.description ?? undefined}
@@ -110,6 +115,7 @@ export default function MissionsListScreen() {
             />
           )}
         />
+        </View>
       ) : null}
     </AppScreenLayout>
   );

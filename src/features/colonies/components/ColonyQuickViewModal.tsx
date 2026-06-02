@@ -1,7 +1,6 @@
 import { Text, View } from 'react-native';
 import { QuickViewModalShell } from '@/components/ui/QuickViewModalShell';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
 import { CrudActionBar } from '@/components/ui/CrudActionBar';
 import { ListSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState, StatusBadge } from '@/components/ui/ScreenPrimitives';
@@ -91,8 +90,6 @@ export function ColonyQuickViewModal({
               isDeleting={remove.isPending}
             />
           ) : null}
-
-          <Button title="Close" onPress={onClose} variant="ghost" />
         </>
       ) : null}
     </QuickViewModalShell>

@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { FlatList, RefreshControl, Text, View } from 'react-native';
+import { RefreshControl, Text, View } from 'react-native';
 import { AppScreenLayout } from '@/components/layout/AppScreenLayout';
+import { EntityGrid } from '@/components/ui/EntityGrid';
 import { FilterChip, FilterRow } from '@/components/ui/FilterBar';
-import { ListSkeleton } from '@/components/ui/Skeleton';
+import { GridSkeleton } from '@/components/ui/Skeleton';
 import {
   EmptyState,
-  ListItem,
+  GridCard,
   ScreenHeader,
 } from '@/components/ui/ScreenPrimitives';
 import { AlertQuickViewModal } from '@/features/alerts/components/AlertQuickViewModal';
@@ -43,7 +44,7 @@ export default function AlertsScreen() {
         />
       </FilterRow>
 
-      {isLoading ? <ListSkeleton count={4} /> : null}
+      {isLoading ? <GridSkeleton count={4} /> : null}
 
       {isError ? (
         <EmptyState title="Failed to load alerts" message={getUserFacingMessage(error)} />
@@ -57,17 +58,17 @@ export default function AlertsScreen() {
       ) : null}
 
       {data && data.length > 0 ? (
-        <FlatList
+        <View className="flex-1">
+        <EntityGrid
           data={data}
           keyExtractor={(item) => item.id}
-          contentContainerClassName="gap-3 pb-8"
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} tintColor="#3b82f6" />
           }
-          renderItem={({ item }) => (
-            <ListItem
+          renderItem={(item) => (
+            <GridCard
               title={item.title}
-              subtitle={item.message.slice(0, 80)}
+              subtitle={item.message.slice(0, 60)}
               meta={formatRelativeDate(item.createdAt)}
               badge={item.acknowledgedAt ? 'ack' : item.severity}
               badgeVariant={
@@ -77,11 +78,12 @@ export default function AlertsScreen() {
             />
           )}
         />
+        </View>
       ) : null}
 
       <View className="mt-2">
         <Text className="text-center text-xs text-astra-muted">
-          Pull to refresh · Realtime enabled when migration is applied
+          Pull to refresh · Live updates when Supabase Realtime is on for alerts
         </Text>
       </View>
     </AppScreenLayout>

@@ -28,6 +28,24 @@ export function ListSkeleton({ count = 3 }: { count?: number }) {
   );
 }
 
+export function GridSkeleton({ count = 4 }: { count?: number }) {
+  return (
+    <View className="flex-row flex-wrap" style={{ gap: 12 }}>
+      {Array.from({ length: count }).map((_, i) => (
+        <View
+          key={i}
+          style={{ width: '48%' }}
+          className="min-h-[128px] rounded-2xl border border-astra-border bg-astra-surface/50 p-3"
+        >
+          <Skeleton height={14} className="mb-3 w-1/2" />
+          <Skeleton height={16} className="mb-2 w-full" />
+          <Skeleton height={12} className="w-4/5" />
+        </View>
+      ))}
+    </View>
+  );
+}
+
 export function StatSkeleton() {
   return (
     <View className="flex-row flex-wrap gap-3">

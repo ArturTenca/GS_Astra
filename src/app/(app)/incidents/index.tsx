@@ -1,12 +1,14 @@
 import { router, type Href } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { useOpenEntityFromParams } from '@/hooks/useOpenEntityFromParams';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { AppScreenLayout } from '@/components/layout/AppScreenLayout';
 import { FilterChip, FilterRow } from '@/components/ui/FilterBar';
-import { ListSkeleton } from '@/components/ui/Skeleton';
+import { EntityGridWrap } from '@/components/ui/EntityGrid';
+import { GridSkeleton } from '@/components/ui/Skeleton';
 import {
   EmptyState,
-  ListItem,
+  GridCard,
   ScreenHeader,
 } from '@/components/ui/ScreenPrimitives';
 import { IncidentQuickViewModal } from '@/features/incidents/components/IncidentQuickViewModal';
@@ -25,6 +27,9 @@ export default function IncidentsListScreen() {
   const { filters, setStatus, setSeverity } = useIncidentFilters();
   const { data, isLoading, isError, error, refetch, isRefetching } = useIncidents(filters);
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
+
+  const openIncident = useCallback((id: string) => setSelectedIncidentId(id), []);
+  useOpenEntityFromParams(openIncident);
 
   const hasModal = useMemo(() => selectedIncidentId != null, [selectedIncidentId]);
 
@@ -88,7 +93,7 @@ export default function IncidentsListScreen() {
           ))}
         </FilterRow>
 
-        {isLoading ? <ListSkeleton count={4} /> : null}
+        {isLoading ? <GridSkeleton count={4} /> : null}
 
         {isError ? (
           <EmptyState title="Failed to load" message={getUserFacingMessage(error)} />
@@ -97,23 +102,26 @@ export default function IncidentsListScreen() {
         {!isLoading && !isError && data?.length === 0 ? (
           <EmptyState
             title="No incidents found"
-            message="Report a new incident or pull down to refresh."
+            message="Tap + Report to log an event, or pull down to refresh."
           />
         ) : null}
 
         {data && data.length > 0 ? (
-          <View className="mt-2 gap-3">
-            {data.map((item) => (
-              <ListItem
-                key={item.id}
-                title={item.title}
-                subtitle={item.description.slice(0, 72)}
-                meta={formatRelativeDate(item.createdAt)}
-                badge={item.status}
-                badgeVariant={incidentStatusVariant(item.status)}
-                onPress={() => setSelectedIncidentId(item.id)}
-              />
-            ))}
+          <View className="mt-2">
+            <EntityGridWrap
+              data={data}
+              keyExtractor={(item) => item.id}
+              renderItem={(item) => (
+                <GridCard
+                  title={item.title}
+                  subtitle={item.description.slice(0, 60)}
+                  meta={formatRelativeDate(item.createdAt)}
+                  badge={item.status}
+                  badgeVariant={incidentStatusVariant(item.status)}
+                  onPress={() => setSelectedIncidentId(item.id)}
+                />
+              )}
+            />
           </View>
         ) : null}
       </ScrollView>

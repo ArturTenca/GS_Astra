@@ -1,0 +1,18 @@
+---
+description: ASTRA UI — light/dark theme and dashboard visual patterns
+globs:
+  - src/components/**/*.tsx
+  - src/app/**/*.tsx
+  - src/theme/**
+  - tailwind.config.js
+  - global.css
+---
+
+# ASTRA UI theme
+
+- Use `useTheme()` for programmatic colors (tab bar, charts, RefreshControl).
+- Prefer NativeWind tokens: `bg-astra-bg`, `text-astra-text`, `border-astra-border` (CSS vars switch with `.dark` on root).
+- Theme preference: `useThemeStore` + `preference-storage` (`astra_theme_mode`; SecureStore on native, sessionStorage on web).
+- Reusable shells: `GlassCard`, `MetricCard`, `SectionTitle`, `QuickViewModalShell`.
+- Keep dashboards clean: max 2 chart sections per screen, generous spacing (`gap-4`), no dense tables on mobile.
+- References: dark = Nebula/ROBOYO (cyan/purple accents); light = Loop (white cards, soft shadow).

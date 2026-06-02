@@ -1,4 +1,5 @@
-import { Text, View } from 'react-native';
+import { Text } from 'react-native';
+import { GlassCard } from '@/components/ui/GlassCard';
 
 type CardProps = {
   children: React.ReactNode;
@@ -6,11 +7,7 @@ type CardProps = {
 };
 
 export function Card({ children, className = '' }: CardProps) {
-  return (
-    <View className={`rounded-xl border border-astra-border bg-astra-surface/90 p-4 ${className}`}>
-      {children}
-    </View>
-  );
+  return <GlassCard className={className}>{children}</GlassCard>;
 }
 
 type StatCardProps = {
@@ -19,11 +16,12 @@ type StatCardProps = {
   accent?: string;
 };
 
+/** @deprecated Prefer MetricCard for new screens */
 export function StatCard({ label, value, accent = 'text-astra-accent' }: StatCardProps) {
   return (
-    <Card className="flex-1 min-w-[140px]">
+    <GlassCard className="min-w-[140px] flex-1">
       <Text className={`text-2xl font-bold ${accent}`}>{value}</Text>
-      <Text className="mt-1 text-xs uppercase tracking-wider text-astra-muted">{label}</Text>
-    </Card>
+      <Text className="mt-1 text-xs font-medium text-astra-muted">{label}</Text>
+    </GlassCard>
   );
 }

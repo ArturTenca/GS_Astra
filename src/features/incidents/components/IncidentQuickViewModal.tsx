@@ -306,8 +306,6 @@ export function IncidentQuickViewModal({
               isDeleting={deleteIncident.isPending}
             />
           ) : null}
-
-          <Button title="Close" onPress={close} variant="ghost" />
         </>
       ) : null}
     </QuickViewModalShell>

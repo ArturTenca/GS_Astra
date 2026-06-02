@@ -1,6 +1,7 @@
 import { ScrollView, Text, View } from 'react-native';
 import { AppScreenLayout } from '@/components/layout/AppScreenLayout';
 import { Button } from '@/components/ui/Button';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { EmptyState, LoadingState, ScreenHeader } from '@/components/ui/ScreenPrimitives';
 import { useLogout } from '@/features/auth/hooks/useLogout';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -23,8 +24,12 @@ export default function ProfileScreen() {
 
   return (
     <AppScreenLayout>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <ScreenHeader title="Operator Profile" subtitle="Account security and session" />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
+        <ScreenHeader title="Operator Profile" subtitle="Account & preferences" />
+
+        <View className="mb-4">
+          <ThemeToggle />
+        </View>
 
         {isLoading ? <LoadingState message="Loading profile…" /> : null}
 
@@ -36,7 +41,7 @@ export default function ProfileScreen() {
         ) : null}
 
         {profile ? (
-          <View className="mb-6 rounded-xl border border-astra-border bg-astra-surface/80 p-4">
+          <View className="mb-4 rounded-2xl border border-astra-border bg-astra-surface p-4 shadow-card dark:shadow-none">
             <Text className="text-lg font-semibold text-astra-text">
               {profile.displayName || 'Operator'}
             </Text>
@@ -47,7 +52,7 @@ export default function ProfileScreen() {
           </View>
         ) : null}
 
-        <View className="mb-6 rounded-xl border border-astra-border bg-astra-surface/80 p-4">
+        <View className="mb-4 rounded-2xl border border-astra-border bg-astra-surface p-4 shadow-card dark:shadow-none">
           <Text className="mb-3 text-base font-semibold text-astra-text">
             Two-factor authentication
           </Text>
@@ -55,7 +60,7 @@ export default function ProfileScreen() {
         </View>
 
         {canViewAudit ? (
-          <View className="mb-6 rounded-xl border border-astra-border bg-astra-surface/80 p-4">
+          <View className="mb-4 rounded-2xl border border-astra-border bg-astra-surface p-4 shadow-card dark:shadow-none">
             <Text className="mb-3 text-base font-semibold text-astra-text">Security audit log</Text>
             {audit.isLoading ? <LoadingState message="Loading audit events…" /> : null}
             {audit.isError ? (
