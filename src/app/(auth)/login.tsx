@@ -1,5 +1,6 @@
 import { Link } from 'expo-router';
-import { Text, View } from 'react-native';
+import { useRef } from 'react';
+import { Text, TextInput, View } from 'react-native';
 import { Button } from '@/components/ui/Button';
 import { AuthFormField } from '@/features/auth/components/AuthFormField';
 import { AuthScreenLayout } from '@/features/auth/components/AuthScreenLayout';
@@ -7,6 +8,7 @@ import { useLogin } from '@/features/auth/hooks/useLogin';
 import { EMAIL_MAX_LENGTH, PASSWORD_MAX_LENGTH } from '@/features/auth/schemas/login.schema';
 
 export default function LoginScreen() {
+  const passwordRef = useRef<TextInput>(null);
   const { form, mfaForm, onSubmit, onMfaSubmit, needsMfa, isPending, errorMessage } =
     useLogin();
 
@@ -30,6 +32,8 @@ export default function LoginScreen() {
             placeholder="000000"
             keyboardType="number-pad"
             maxLength={6}
+            returnKeyType="go"
+            onSubmitEditing={onMfaSubmit}
           />
           <Button title="Verify & Sign In" onPress={onMfaSubmit} loading={isPending} />
         </>
@@ -42,6 +46,9 @@ export default function LoginScreen() {
             placeholder="commander@astra.mission"
             keyboardType="email-address"
             maxLength={EMAIL_MAX_LENGTH}
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => passwordRef.current?.focus()}
           />
           <AuthFormField
             control={form.control}
@@ -50,6 +57,9 @@ export default function LoginScreen() {
             placeholder="••••••••"
             secureTextEntry
             maxLength={PASSWORD_MAX_LENGTH}
+            inputRef={passwordRef}
+            returnKeyType="go"
+            onSubmitEditing={onSubmit}
           />
           <Button title="Sign In" onPress={onSubmit} loading={isPending} />
         </>

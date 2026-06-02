@@ -9,11 +9,31 @@ export type Alert = {
   title: string;
   message: string;
   severity: AlertSeverity;
+  activeUntil: string | null;
   acknowledgedAt: string | null;
   acknowledgedBy: string | null;
   createdAt: string;
 };
 
 export type AlertFilters = {
-  status: 'all' | 'unacknowledged';
+  status: 'all' | 'active' | 'expired' | 'acknowledged';
+};
+
+export type CreateAlertInput = {
+  missionId: string;
+  colonyId?: string | null;
+  title: string;
+  message: string;
+  severity: AlertSeverity;
+  activeUntil?: string | null;
+};
+
+export type UpdateAlertInput = {
+  id: string;
+  missionId?: string;
+  colonyId?: string | null;
+  title?: string;
+  message?: string;
+  severity?: AlertSeverity;
+  activeUntil?: string | null;
 };

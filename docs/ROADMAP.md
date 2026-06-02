@@ -28,6 +28,7 @@ All migrations listed below are in `supabase/migrations/`. After applying them a
 | 7 | `20260601100000_audit_events.sql` | Security audit log |
 | 8 | `20260602100000_domain_crud_policies.sql` | CRUD RLS |
 | 9 | `20260603100000_alerts_telemetry.sql` | Alerts + telemetry + realtime |
+| 10 | `20260604100000_alerts_deadline_crud.sql` | Alert deadline (`active_until`) + CRUD RLS |
 | — | `seed.sql` | Demo data (re-run after signup) |
 
 **Realtime:** enable replication for `public.alerts`.

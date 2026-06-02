@@ -11,6 +11,10 @@ export function canManageColonyRecord(isAuthenticated: boolean): boolean {
   return isAuthenticated;
 }
 
+export function canManageAlertRecord(isAuthenticated: boolean): boolean {
+  return isAuthenticated;
+}
+
 export function canEditIncident(isAuthenticated: boolean, userId: string | null): boolean {
   return isAuthenticated && userId != null;
 }

@@ -1,5 +1,10 @@
 import { Controller, type Control, type FieldPath, type FieldValues } from 'react-hook-form';
-import { Text, TextInput, View } from 'react-native';
+import {
+  Text,
+  TextInput,
+  View,
+  type TextInputProps,
+} from 'react-native';
 
 type AuthFormFieldProps<T extends FieldValues> = {
   control: Control<T>;
@@ -10,6 +15,10 @@ type AuthFormFieldProps<T extends FieldValues> = {
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   keyboardType?: 'default' | 'email-address' | 'number-pad';
   maxLength?: number;
+  returnKeyType?: TextInputProps['returnKeyType'];
+  onSubmitEditing?: () => void;
+  blurOnSubmit?: boolean;
+  inputRef?: React.Ref<TextInput>;
 };
 
 export function AuthFormField<T extends FieldValues>({
@@ -21,6 +30,10 @@ export function AuthFormField<T extends FieldValues>({
   autoCapitalize = 'none',
   keyboardType = 'default',
   maxLength,
+  returnKeyType,
+  onSubmitEditing,
+  blurOnSubmit = true,
+  inputRef,
 }: AuthFormFieldProps<T>) {
   return (
     <Controller
@@ -32,6 +45,7 @@ export function AuthFormField<T extends FieldValues>({
             {label}
           </Text>
           <TextInput
+            ref={inputRef}
             className="rounded-lg border border-astra-border bg-astra-panel px-4 py-3 text-astra-text"
             placeholder={placeholder}
             placeholderTextColor="#64748b"
@@ -43,8 +57,15 @@ export function AuthFormField<T extends FieldValues>({
             keyboardType={keyboardType}
             autoCorrect={false}
             maxLength={maxLength}
-            textContentType={secureTextEntry ? 'password' : keyboardType === 'email-address' ? 'emailAddress' : 'none'}
-            autoComplete={secureTextEntry ? 'password' : keyboardType === 'email-address' ? 'email' : 'off'}
+            returnKeyType={returnKeyType}
+            onSubmitEditing={onSubmitEditing}
+            blurOnSubmit={blurOnSubmit}
+            textContentType={
+              secureTextEntry ? 'password' : keyboardType === 'email-address' ? 'emailAddress' : 'none'
+            }
+            autoComplete={
+              secureTextEntry ? 'password' : keyboardType === 'email-address' ? 'email' : 'off'
+            }
           />
           {error ? (
             <Text className="mt-1 text-sm text-astra-danger">{error.message}</Text>

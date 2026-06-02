@@ -180,6 +180,7 @@ export type Database = {
           title: string;
           message: string;
           severity: Database['public']['Enums']['alert_severity'];
+          active_until: string | null;
           acknowledged_at: string | null;
           acknowledged_by: string | null;
           created_at: string;
@@ -192,8 +193,15 @@ export type Database = {
           title: string;
           message: string;
           severity?: Database['public']['Enums']['alert_severity'];
+          active_until?: string | null;
         };
         Update: {
+          mission_id?: string;
+          colony_id?: string | null;
+          title?: string;
+          message?: string;
+          severity?: Database['public']['Enums']['alert_severity'];
+          active_until?: string | null;
           acknowledged_at?: string | null;
           acknowledged_by?: string | null;
         };
