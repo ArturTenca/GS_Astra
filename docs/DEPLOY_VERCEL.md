@@ -7,9 +7,11 @@ Expo Router uses a **SPA** (`web.output: single`). Vercel must serve `index.html
 | Setting | Value |
 |---------|--------|
 | Framework Preset | **Other** |
-| Build Command | `npm run build:web` (or use root `vercel.json`) |
+| Build Command | **`npx expo export -p web`** (or leave empty to use `vercel.json`) |
 | Output Directory | **`dist`** |
 | Install Command | `npm install` |
+
+**Important:** In Vercel → Settings → Build & Development, **do not override** the build command with `npm run build:web` unless `package.json` on that branch includes that script. Prefer `npx expo export -p web` or clear the override so `vercel.json` applies.
 
 ## Environment variables (required)
 

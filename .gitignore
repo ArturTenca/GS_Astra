@@ -30,6 +30,9 @@ GoogleService-Info.plist
 
 .DS_Store
 
+# Local reference / scratch (not shipped)
+landingpage.html
+
 # Supabase local CLI state
 supabase/.branches
 supabase/.temp

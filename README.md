@@ -23,6 +23,7 @@ Futuristic mobile platform for space mission support, extraterrestrial colony op
 | **Alerts** | CRUD, calendar deadline, realtime, acknowledge |
 | **Dashboard** | Stats + colony telemetry charts |
 | **Security** | Audit log, optional MFA (TOTP), academic docs |
+| **Landing (web)** | Marketing page for unauthenticated visitors (Vercel) |
 
 ## Prerequisites
 
@@ -57,7 +58,7 @@ npx expo start --clear
 
 ### Web deploy (Vercel)
 
-See **[docs/DEPLOY_VERCEL.md](docs/DEPLOY_VERCEL.md)**. Requires `vercel.json`, build `npm run build:web`, output `dist`, and Supabase env vars on Vercel.
+See **[docs/DEPLOY_VERCEL.md](docs/DEPLOY_VERCEL.md)**. Build: `npx expo export -p web` → output `dist`. Set Supabase env vars on Vercel.
 
 Press **`w`** for web, or scan the QR code with Expo Go.
 
@@ -94,9 +95,9 @@ See **[docs/VERIFICATION.md](docs/VERIFICATION.md)** for a full test checklist.
 
 ```
 src/
-  app/           # Expo Router (tabs: dashboard, alerts, missions, colonies, incidents, profile)
+  app/           # Expo Router (auth, app tabs, web landing at /)
   components/    # Shared UI
-  features/      # Feature modules
+  features/      # Feature modules (incl. landing for web)
   services/      # Repositories + audit
   lib/           # Supabase, errors, auth, permissions
   stores/        # Zustand (no tokens)
@@ -104,6 +105,7 @@ supabase/
   migrations/    # SQL files local only (gitignored) — see docs/MIGRATIONS_LOCAL.md
   seed.sql       # Dev seed (gitignored)
 docs/            # Roadmap + academic + verification
+assets/landing/  # Hero image for web landing (AVIF)
 ```
 
 ## Security notes

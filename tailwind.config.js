@@ -5,6 +5,10 @@ module.exports = {
   presets: [require('nativewind/preset')],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        serif: ['"Playfair Display"', 'Georgia', 'serif'],
+      },
       colors: {
         astra: {
           bg: 'rgb(var(--astra-bg) / <alpha-value>)',
