@@ -10,7 +10,7 @@
     "web": "expo start --web",
     "build": "expo export -p web",
     "build:web": "expo export -p web",
-    "vercel-build": "expo export -p web",
+    "netlify-build": "expo export -p web",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",

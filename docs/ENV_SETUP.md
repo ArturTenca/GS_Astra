@@ -11,4 +11,4 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 
 Use only the Supabase **anon (public)** key — never `service_role`.
 
-For Vercel, set the same names in Project → Settings → Environment Variables.
+For Netlify, set the same names in Site configuration → Environment variables.

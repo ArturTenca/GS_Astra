@@ -1,5 +1,6 @@
-import type { Session, User } from '@supabase/supabase-js';
+import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 import { useEffect, useRef } from 'react';
+import { Platform } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { signOut as authSignOut } from '@/features/auth/services/auth.service';
 import {
@@ -18,6 +19,12 @@ type AuthProviderProps = {
 
 const RESTORE_TIMEOUT_MS = 8_000;
 
+/** Token refresh must not block the UI when the user returns to the tab. */
+const SILENT_AUTH_EVENTS = new Set<AuthChangeEvent>([
+  'TOKEN_REFRESHED',
+  'USER_UPDATED',
+]);
+
 function isTransientBootstrapError(error: unknown): boolean {
   if (error instanceof NetworkError) {
     return true;
@@ -33,6 +40,11 @@ function isTransientBootstrapError(error: unknown): boolean {
     message.includes('fetch') ||
     message.includes('failed to fetch')
   );
+}
+
+function isAlreadyAuthenticated(userId: string): boolean {
+  const state = useSessionStore.getState();
+  return state.isAuthenticated && state.userId === userId;
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
@@ -129,7 +141,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     };
 
-    const restoreSession = async (session: Session | null) => {
+    const restoreSession = async (
+      session: Session | null,
+      options: { showOverlay?: boolean } = {},
+    ) => {
+      const showOverlay = options.showOverlay ?? true;
+
       if (!session?.user) {
         if (mounted) {
           clearSession();
@@ -137,7 +154,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return;
       }
 
-      startRestoring();
+      if (isAlreadyAuthenticated(session.user.id)) {
+        return;
+      }
+
+      if (showOverlay) {
+        startRestoring();
+      }
+
       try {
         await applySession(session.user);
       } catch (error) {
@@ -147,48 +171,60 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
         invalidateSession('no_profile');
       } finally {
-        stopRestoring();
+        if (showOverlay) {
+          stopRestoring();
+        }
       }
     };
 
-    const { data: subscription } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'INITIAL_SESSION') {
-          finishHydration();
-          void restoreSession(session);
-          return;
-        }
+    const handleAuthEvent = async (event: AuthChangeEvent, session: Session | null) => {
+      if (SILENT_AUTH_EVENTS.has(event)) {
+        return;
+      }
 
-        if (!hasHydrated.current) {
-          return;
-        }
+      if (event === 'INITIAL_SESSION') {
+        finishHydration();
+        void restoreSession(session, { showOverlay: true });
+        return;
+      }
 
-        if (event === 'SIGNED_OUT') {
-          stopRestoring();
-          clearSession();
-          queryClient.clear();
-          return;
-        }
+      if (!hasHydrated.current) {
+        return;
+      }
 
-        if (session?.user) {
-          startRestoring();
-          try {
-            await applySession(session.user);
-          } catch (error) {
-            if (!isTransientBootstrapError(error)) {
-              invalidateSession('no_profile');
-            }
-          } finally {
-            stopRestoring();
-          }
-          return;
-        }
-
+      if (event === 'SIGNED_OUT') {
         stopRestoring();
         clearSession();
         queryClient.clear();
-      },
-    );
+        return;
+      }
+
+      if (session?.user) {
+        if (isAlreadyAuthenticated(session.user.id)) {
+          return;
+        }
+
+        startRestoring();
+        try {
+          await applySession(session.user);
+        } catch (error) {
+          if (!isTransientBootstrapError(error)) {
+            invalidateSession('no_profile');
+          }
+        } finally {
+          stopRestoring();
+        }
+        return;
+      }
+
+      stopRestoring();
+      clearSession();
+      queryClient.clear();
+    };
+
+    const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
+      void handleAuthEvent(event, session);
+    });
 
     const fallbackTimer = setTimeout(() => {
       if (!hasHydrated.current && mounted) {
@@ -199,7 +235,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             if (error) {
               throw mapSupabaseAuthError(error, 'session');
             }
-            await restoreSession(data.session);
+            await restoreSession(data.session, { showOverlay: true });
           } catch {
             if (mounted) {
               clearSession();
@@ -211,11 +247,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     }, 3_000);
 
+    const handleVisibilityChange = () => {
+      if (Platform.OS !== 'web' || typeof document === 'undefined') {
+        return;
+      }
+
+      if (document.visibilityState !== 'visible') {
+        return;
+      }
+
+      const { isRestoringSession, isAuthenticated } = useSessionStore.getState();
+      if (isRestoringSession && isAuthenticated) {
+        stopRestoring();
+      }
+    };
+
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
+
     return () => {
       mounted = false;
       clearTimeout(fallbackTimer);
       if (restoreTimeout) {
         clearTimeout(restoreTimeout);
+      }
+      if (Platform.OS === 'web' && typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
       }
       subscription.subscription.unsubscribe();
     };

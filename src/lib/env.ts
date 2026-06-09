@@ -28,7 +28,7 @@ const envSchema = z.object({
 function getEnvValues() {
   const extra = Constants.expoConfig?.extra as Record<string, string | undefined> | undefined;
 
-  // Vercel/CI: EXPO_PUBLIC_* at build time; dev: .env via dotenv in app.config
+  // Netlify/CI: EXPO_PUBLIC_* at build time; dev: .env via dotenv in app.config
   return {
     EXPO_PUBLIC_SUPABASE_URL:
       process.env.EXPO_PUBLIC_SUPABASE_URL ??

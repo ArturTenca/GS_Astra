@@ -23,7 +23,7 @@ Futuristic mobile platform for space mission support, extraterrestrial colony op
 | **Alerts** | CRUD, calendar deadline, realtime, acknowledge |
 | **Dashboard** | Stats + colony telemetry charts |
 | **Security** | Audit log, optional MFA (TOTP), academic docs |
-| **Landing (web)** | Marketing page for unauthenticated visitors (Vercel) |
+| **Landing (web)** | Marketing page for unauthenticated visitors (Netlify) |
 
 ## Prerequisites
 
@@ -56,9 +56,9 @@ Enable **Realtime** for table `alerts` (Database → Replication).
 npx expo start --clear
 ```
 
-### Web deploy (Vercel)
+### Web deploy (Netlify)
 
-See **[docs/DEPLOY_VERCEL.md](docs/DEPLOY_VERCEL.md)**. Build: `npx expo export -p web` → output `dist`. Set Supabase env vars on Vercel.
+See **[docs/DEPLOY_NETLIFY.md](docs/DEPLOY_NETLIFY.md)**. Build: `npx expo export -p web` → output `dist`. Set Supabase env vars on Netlify.
 
 Press **`w`** for web, or scan the QR code with Expo Go.
 
@@ -89,6 +89,7 @@ See **[docs/VERIFICATION.md](docs/VERIFICATION.md)** for a full test checklist.
 | [docs/CYBER_SECURITY_AUDIT.md](docs/CYBER_SECURITY_AUDIT.md) | Security audit + Git hygiene |
 | [docs/MIGRATIONS_LOCAL.md](docs/MIGRATIONS_LOCAL.md) | Migration order (SQL stays local) |
 | [docs/ENV_SETUP.md](docs/ENV_SETUP.md) | Local `.env` variables (not in Git) |
+| [docs/DEPLOY_NETLIFY.md](docs/DEPLOY_NETLIFY.md) | Web deploy on Netlify (SPA + headers) |
 | [SECURITY.md](SECURITY.md) | GitHub security policy |
 
 ## Project structure
