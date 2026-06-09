@@ -1,4 +1,4 @@
-import type { User } from '@supabase/supabase-js';
+import type { Session, User } from '@supabase/supabase-js';
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { signOut as authSignOut } from '@/features/auth/services/auth.service';
@@ -16,8 +16,7 @@ type AuthProviderProps = {
   children: React.ReactNode;
 };
 
-const BOOTSTRAP_MAX_ATTEMPTS = 3;
-const BOOTSTRAP_RETRY_MS = 400;
+const RESTORE_TIMEOUT_MS = 8_000;
 
 function isTransientBootstrapError(error: unknown): boolean {
   if (error instanceof NetworkError) {
@@ -36,31 +35,52 @@ function isTransientBootstrapError(error: unknown): boolean {
   );
 }
 
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
 export function AuthProvider({ children }: AuthProviderProps) {
   const queryClient = useQueryClient();
   const setSession = useSessionStore((s) => s.setSession);
   const setAccessBlock = useSessionStore((s) => s.setAccessBlock);
   const clearSession = useSessionStore((s) => s.clearSession);
   const setHydrated = useSessionStore((s) => s.setHydrated);
-  const bootstrapped = useRef(false);
+  const setRestoringSession = useSessionStore((s) => s.setRestoringSession);
+  const hasHydrated = useRef(false);
 
   useEffect(() => {
     let mounted = true;
+    let restoreTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    const invalidateSession = async (
-      reason: Parameters<typeof setAccessBlock>[0],
-    ) => {
-      try {
-        await authSignOut();
-      } catch {
-        // Session may already be invalid
+    const finishHydration = () => {
+      if (!hasHydrated.current) {
+        hasHydrated.current = true;
+        setHydrated(true);
       }
+    };
+
+    const stopRestoring = () => {
+      if (restoreTimeout) {
+        clearTimeout(restoreTimeout);
+        restoreTimeout = null;
+      }
+      if (mounted) {
+        setRestoringSession(false);
+      }
+    };
+
+    const startRestoring = () => {
+      if (!mounted) return;
+      setRestoringSession(true);
+      if (restoreTimeout) {
+        clearTimeout(restoreTimeout);
+      }
+      restoreTimeout = setTimeout(() => {
+        logger.warn('auth_restore_timeout');
+        stopRestoring();
+      }, RESTORE_TIMEOUT_MS);
+    };
+
+    const invalidateSession = (reason: Parameters<typeof setAccessBlock>[0]) => {
+      void authSignOut().catch(() => {
+        // Session may already be invalid
+      });
       if (mounted) {
         setAccessBlock(reason, getAccessBlockMessage(reason));
       }
@@ -72,13 +92,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       let profile = await profileRepository.getByUserId(user.id);
 
       if (!profile) {
-        await invalidateSession('no_profile');
+        invalidateSession('no_profile');
         return;
       }
 
       if (profile.status === 'pending') {
         if (!user.email_confirmed_at) {
-          await invalidateSession('email_unconfirmed');
+          invalidateSession('email_unconfirmed');
           return;
         }
 
@@ -90,13 +110,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
 
         if (!profile || profile.status === 'pending') {
-          await invalidateSession('profile_pending');
+          invalidateSession('profile_pending');
           return;
         }
       }
 
       if (profile.status === 'suspended') {
-        await invalidateSession('profile_suspended');
+        invalidateSession('profile_suspended');
         return;
       }
 
@@ -109,85 +129,97 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     };
 
-    async function bootstrap() {
-      let lastError: unknown = null;
+    const restoreSession = async (session: Session | null) => {
+      if (!session?.user) {
+        if (mounted) {
+          clearSession();
+        }
+        return;
+      }
 
-      for (let attempt = 0; attempt < BOOTSTRAP_MAX_ATTEMPTS; attempt += 1) {
-        try {
-          const { data, error } = await supabase.auth.getSession();
-          if (error) {
-            throw mapSupabaseAuthError(error, 'session');
-          }
-
-          if (data.session?.user && mounted) {
-            await applySession(data.session.user);
-          } else if (mounted) {
-            clearSession();
-          }
-          return;
-        } catch (error) {
-          lastError = error;
-          const canRetry =
-            attempt < BOOTSTRAP_MAX_ATTEMPTS - 1 && isTransientBootstrapError(error);
-
-          if (canRetry) {
-            logger.warn('auth_bootstrap_retry', { attempt: attempt + 1 });
-            await delay(BOOTSTRAP_RETRY_MS * (attempt + 1));
-            continue;
-          }
-
-          logger.warn('auth_bootstrap_failed');
-          if (mounted) {
-            const { data } = await supabase.auth.getSession();
-            if (!data.session) {
-              clearSession();
-            }
-          }
+      startRestoring();
+      try {
+        await applySession(session.user);
+      } catch (error) {
+        if (isTransientBootstrapError(error)) {
+          logger.warn('auth_restore_transient_failure');
           return;
         }
+        invalidateSession('no_profile');
+      } finally {
+        stopRestoring();
       }
-
-      if (lastError) {
-        logger.warn('auth_bootstrap_exhausted');
-      }
-    }
-
-    void (async () => {
-      await bootstrap();
-      if (mounted) {
-        setHydrated(true);
-        bootstrapped.current = true;
-      }
-    })();
+    };
 
     const { data: subscription } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (!bootstrapped.current && event === 'INITIAL_SESSION') {
+        if (event === 'INITIAL_SESSION') {
+          finishHydration();
+          void restoreSession(session);
+          return;
+        }
+
+        if (!hasHydrated.current) {
+          return;
+        }
+
+        if (event === 'SIGNED_OUT') {
+          stopRestoring();
+          clearSession();
+          queryClient.clear();
           return;
         }
 
         if (session?.user) {
+          startRestoring();
           try {
             await applySession(session.user);
           } catch (error) {
-            if (isTransientBootstrapError(error)) {
-              logger.warn('auth_apply_session_transient_failure');
-              return;
+            if (!isTransientBootstrapError(error)) {
+              invalidateSession('no_profile');
             }
-            await invalidateSession('no_profile');
+          } finally {
+            stopRestoring();
           }
-        } else {
-          clearSession();
-          queryClient.clear();
+          return;
         }
+
+        stopRestoring();
+        clearSession();
+        queryClient.clear();
       },
     );
 
+    const fallbackTimer = setTimeout(() => {
+      if (!hasHydrated.current && mounted) {
+        logger.warn('auth_initial_session_fallback');
+        void (async () => {
+          try {
+            const { data, error } = await supabase.auth.getSession();
+            if (error) {
+              throw mapSupabaseAuthError(error, 'session');
+            }
+            await restoreSession(data.session);
+          } catch {
+            if (mounted) {
+              clearSession();
+            }
+          } finally {
+            finishHydration();
+          }
+        })();
+      }
+    }, 3_000);
+
     return () => {
       mounted = false;
+      clearTimeout(fallbackTimer);
+      if (restoreTimeout) {
+        clearTimeout(restoreTimeout);
+      }
       subscription.subscription.unsubscribe();
     };
-  }, [clearSession, queryClient, setAccessBlock, setHydrated, setSession]);
+  }, [clearSession, queryClient, setAccessBlock, setHydrated, setRestoringSession, setSession]);
 
   return <>{children}</>;
-};
+}

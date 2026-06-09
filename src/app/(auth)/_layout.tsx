@@ -3,9 +3,9 @@ import { AuthLoadingScreen } from '@/components/feedback/AuthLoadingScreen';
 import { useAuthGuard } from '@/lib/auth/auth-guards';
 
 export default function AuthLayout() {
-  const { isHydrated, isAuthenticated } = useAuthGuard();
+  const { isAuthReady, isAuthenticated } = useAuthGuard();
 
-  if (!isHydrated) {
+  if (!isAuthReady) {
     return <AuthLoadingScreen />;
   }
 

@@ -8,6 +8,7 @@ type SessionState = {
   profileStatus: ProfileStatus | null;
   isAuthenticated: boolean;
   isHydrated: boolean;
+  isRestoringSession: boolean;
   accessBlockReason: AccessBlockReason | null;
   accessBlockMessage: string | null;
   setSession: (payload: {
@@ -19,6 +20,7 @@ type SessionState = {
   clearAccessBlock: () => void;
   clearSession: () => void;
   setHydrated: (value: boolean) => void;
+  setRestoringSession: (value: boolean) => void;
 };
 
 export const useSessionStore = create<SessionState>((set) => ({
@@ -27,6 +29,7 @@ export const useSessionStore = create<SessionState>((set) => ({
   profileStatus: null,
   isAuthenticated: false,
   isHydrated: false,
+  isRestoringSession: false,
   accessBlockReason: null,
   accessBlockMessage: null,
   setSession: ({ userId, role, profileStatus }) =>
@@ -60,4 +63,5 @@ export const useSessionStore = create<SessionState>((set) => ({
       isAuthenticated: false,
     }),
   setHydrated: (isHydrated) => set({ isHydrated }),
+  setRestoringSession: (isRestoringSession) => set({ isRestoringSession }),
 }));

@@ -7,13 +7,13 @@ import { useAuthGuard } from '@/lib/auth/auth-guards';
 import { useTheme } from '@/hooks/useTheme';
 
 export default function AppLayout() {
-  const { isHydrated, isAuthenticated } = useAuthGuard();
+  const { isAuthReady, isAuthenticated } = useAuthGuard();
   const { palette } = useTheme();
   const { data: unacknowledgedCount } = useUnacknowledgedAlertCount();
 
   useAlertsRealtime();
 
-  if (!isHydrated) {
+  if (!isAuthReady) {
     return <AuthLoadingScreen />;
   }
 

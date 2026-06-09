@@ -5,9 +5,9 @@ import { LandingPage } from '@/features/landing/components/LandingPage';
 import { useAuthGuard } from '@/lib/auth/auth-guards';
 
 export default function Index() {
-  const { isHydrated, isAuthenticated } = useAuthGuard();
+  const { isAuthReady, isAuthenticated } = useAuthGuard();
 
-  if (!isHydrated) {
+  if (!isAuthReady) {
     return <AuthLoadingScreen />;
   }
 
