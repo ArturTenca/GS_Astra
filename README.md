@@ -2,6 +2,10 @@
 
 Futuristic mobile platform for space mission support, extraterrestrial colony operations, and critical mission monitoring.
 
+## Vídeo Explicativo (MOBILE):
+
+https://www.youtube.com/watch?v=X842K9rdVpQ
+
 ## Tech stack
 
 - React Native (Expo SDK 52)
