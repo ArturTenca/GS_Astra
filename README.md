@@ -2,6 +2,18 @@
 
 Futuristic mobile platform for space mission support, extraterrestrial colony operations, and critical mission monitoring.
 
+## Integrantes 
+
+Victor Mattenhauer Lopes Capp RM 555753
+
+Artur Alves Tenca RM 555171
+
+Igor Brunelli Ralo RM 555035
+
+João Pedro Signor Avelar RM 558375
+
+Roger Cardoso Ferreira RM 557230
+
 ## Vídeo Explicativo (MOBILE):
 
 https://www.youtube.com/watch?v=X842K9rdVpQ
