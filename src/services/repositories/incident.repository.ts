@@ -155,11 +155,13 @@ export class IncidentRepository extends BaseRepository {
   }
 
   async delete(id: string): Promise<void> {
-    const { error } = await supabase.from('incidents').delete().eq('id', id);
+    const { data, error } = await supabase
+      .from('incidents')
+      .delete()
+      .eq('id', id)
+      .select('id');
 
-    if (error) {
-      this.handleError(error);
-    }
+    this.assertDeleted(data, error);
   }
 
   async updateStatus(input: UpdateIncidentStatusInput): Promise<Incident> {

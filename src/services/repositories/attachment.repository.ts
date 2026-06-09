@@ -1,3 +1,4 @@
+import { ForbiddenError } from '@/lib/errors';
 import { supabase } from '@/lib/supabase';
 import type { IncidentAttachment, PendingAttachment } from '@/types/attachment.types';
 import { BaseRepository } from './base.repository';
@@ -133,13 +134,20 @@ export class AttachmentRepository extends BaseRepository {
       }
     }
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('incident_attachments')
       .delete()
-      .eq('incident_id', incidentId);
+      .eq('incident_id', incidentId)
+      .select('id');
 
     if (error) {
       this.handleError(error);
+    }
+
+    if ((rows ?? []).length > 0 && !data?.length) {
+      throw new ForbiddenError(
+        'Unable to delete incident attachments. You may not have permission.',
+      );
     }
   }
 

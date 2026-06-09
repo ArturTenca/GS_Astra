@@ -81,11 +81,13 @@ export class MissionRepository extends BaseRepository {
   }
 
   async delete(id: string): Promise<void> {
-    const { error } = await supabase.from('missions').delete().eq('id', id);
+    const { data, error } = await supabase
+      .from('missions')
+      .delete()
+      .eq('id', id)
+      .select('id');
 
-    if (error) {
-      this.handleError(error);
-    }
+    this.assertDeleted(data, error);
   }
 }
 

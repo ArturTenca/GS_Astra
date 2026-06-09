@@ -6,6 +6,7 @@ import {
   getAccessBlockMessage,
   mapSupabaseAuthError,
 } from '@/lib/auth/map-auth-error';
+import { NetworkError, isAppError } from '@/lib/errors';
 import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 import { profileRepository } from '@/services/repositories/profile.repository';
@@ -14,6 +15,32 @@ import { useSessionStore } from '@/stores/session.store';
 type AuthProviderProps = {
   children: React.ReactNode;
 };
+
+const BOOTSTRAP_MAX_ATTEMPTS = 3;
+const BOOTSTRAP_RETRY_MS = 400;
+
+function isTransientBootstrapError(error: unknown): boolean {
+  if (error instanceof NetworkError) {
+    return true;
+  }
+
+  if (isAppError(error)) {
+    return error.code === 'NETWORK';
+  }
+
+  const message = error instanceof Error ? error.message.toLowerCase() : '';
+  return (
+    message.includes('network') ||
+    message.includes('fetch') ||
+    message.includes('failed to fetch')
+  );
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const queryClient = useQueryClient();
@@ -83,31 +110,55 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
 
     async function bootstrap() {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          throw mapSupabaseAuthError(error, 'session');
-        }
+      let lastError: unknown = null;
 
-        if (data.session?.user && mounted) {
-          await applySession(data.session.user);
-        } else if (mounted) {
-          clearSession();
+      for (let attempt = 0; attempt < BOOTSTRAP_MAX_ATTEMPTS; attempt += 1) {
+        try {
+          const { data, error } = await supabase.auth.getSession();
+          if (error) {
+            throw mapSupabaseAuthError(error, 'session');
+          }
+
+          if (data.session?.user && mounted) {
+            await applySession(data.session.user);
+          } else if (mounted) {
+            clearSession();
+          }
+          return;
+        } catch (error) {
+          lastError = error;
+          const canRetry =
+            attempt < BOOTSTRAP_MAX_ATTEMPTS - 1 && isTransientBootstrapError(error);
+
+          if (canRetry) {
+            logger.warn('auth_bootstrap_retry', { attempt: attempt + 1 });
+            await delay(BOOTSTRAP_RETRY_MS * (attempt + 1));
+            continue;
+          }
+
+          logger.warn('auth_bootstrap_failed');
+          if (mounted) {
+            const { data } = await supabase.auth.getSession();
+            if (!data.session) {
+              clearSession();
+            }
+          }
+          return;
         }
-      } catch {
-        logger.warn('auth_bootstrap_failed');
-        if (mounted) {
-          clearSession();
-        }
-      } finally {
-        if (mounted) {
-          setHydrated(true);
-          bootstrapped.current = true;
-        }
+      }
+
+      if (lastError) {
+        logger.warn('auth_bootstrap_exhausted');
       }
     }
 
-    void bootstrap();
+    void (async () => {
+      await bootstrap();
+      if (mounted) {
+        setHydrated(true);
+        bootstrapped.current = true;
+      }
+    })();
 
     const { data: subscription } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -118,7 +169,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (session?.user) {
           try {
             await applySession(session.user);
-          } catch {
+          } catch (error) {
+            if (isTransientBootstrapError(error)) {
+              logger.warn('auth_apply_session_transient_failure');
+              return;
+            }
             await invalidateSession('no_profile');
           }
         } else {
@@ -135,4 +190,4 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [clearSession, queryClient, setAccessBlock, setHydrated, setSession]);
 
   return <>{children}</>;
-}
+};

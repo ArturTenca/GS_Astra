@@ -14,19 +14,51 @@ function isWeb(): boolean {
   return Platform.OS === 'web';
 }
 
-/** Web fallback: sessionStorage (tab-scoped). Native uses SecureStore only. */
+function prefixedWebKey(key: string): string {
+  return `${WEB_STORAGE_PREFIX}${key}`;
+}
+
+/**
+ * Web auth storage uses localStorage so sessions survive reloads and new tabs.
+ * Migrates any legacy sessionStorage entries on read.
+ */
 const webStorage = {
   getItem: (key: string): string | null => {
-    if (typeof sessionStorage === 'undefined') return null;
-    return sessionStorage.getItem(`${WEB_STORAGE_PREFIX}${key}`);
+    if (typeof window === 'undefined') return null;
+
+    const storageKey = prefixedWebKey(key);
+
+    const fromLocal = localStorage.getItem(storageKey);
+    if (fromLocal != null) {
+      return fromLocal;
+    }
+
+    if (typeof sessionStorage === 'undefined') {
+      return null;
+    }
+
+    const fromSession = sessionStorage.getItem(storageKey);
+    if (fromSession != null) {
+      localStorage.setItem(storageKey, fromSession);
+      sessionStorage.removeItem(storageKey);
+      return fromSession;
+    }
+
+    return null;
   },
   setItem: (key: string, value: string): void => {
-    if (typeof sessionStorage === 'undefined') return;
-    sessionStorage.setItem(`${WEB_STORAGE_PREFIX}${key}`, value);
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(prefixedWebKey(key), value);
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem(prefixedWebKey(key));
+    }
   },
   removeItem: (key: string): void => {
-    if (typeof sessionStorage === 'undefined') return;
-    sessionStorage.removeItem(`${WEB_STORAGE_PREFIX}${key}`);
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem(prefixedWebKey(key));
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem(prefixedWebKey(key));
+    }
   },
 };
 
@@ -94,7 +126,7 @@ async function removeLargeItem(key: string): Promise<void> {
 }
 
 /**
- * Supabase auth storage: SecureStore on native, sessionStorage on web.
+ * Supabase auth storage: SecureStore on native, localStorage on web.
  * Never uses @react-native-async-storage/async-storage.
  */
 export const supabaseSecureStorage: SupportedStorage = {
